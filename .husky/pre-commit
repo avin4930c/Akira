@@ -1,1 +1,9 @@
-npm test
+dd() {
+  echo -e "\n\n\e[31m$1\e[0m\n\n"
+  exit 1
+}
+
+cd webclient
+npm run build || dd "Build Failed"
+npm run test || dd "Tests Failed"
+cd ..
