@@ -1,9 +1,8 @@
 import asyncio
 from fastapi import APIRouter, WebSocket
-from src.app.services.groq.groq_client import GroqService
-from src.app.services.llm.agent_selector import AgentSelector
-from src.app.services.llm.agents.general_agent import GeneralAgent
-from src.app.prompts.all_agents_prompt import BASE_PROMPT
+from src.services.llm.agent_selector import AgentSelector
+from src.services.llm.agents.general_agent import GeneralAgent
+from src.prompts.all_agents_prompt import BASE_PROMPT
 
 class ChatManager:
     def __init__(self, llm_service):
@@ -46,7 +45,6 @@ chat_router = APIRouter()
 async def chat_websocket(websocket: WebSocket):
     await websocket.accept()
     
-    llm_service = GroqService()
     chat_manager =  ChatManager(llm_service)
     
 

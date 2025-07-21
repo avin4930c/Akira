@@ -1,4 +1,4 @@
-from src.app.prompts.all_agents_prompt import GENERAL_AGENT_PROMPT
+from src.prompts.all_agents_prompt import GENERAL_AGENT_PROMPT
 
 class GeneralAgent:
     def __init__(self, llm_service):
