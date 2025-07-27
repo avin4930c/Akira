@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.routes.chat import chat
-from src.settings import settings
+from app.routes.chat import chat
+from app.settings.settings import settings
+from server.app.core.lifespan import lifespan
+from app.middleware.logging import logging_middleware
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
+
+app.add_middleware("http")(logging_middleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,8 +21,8 @@ app.include_router(chat.chat_router, prefix="/chat")
 
 @app.get("/")
 async def root():
-    return {"Backend": "Bike Chatbot Backend"}
+    return {"Backend": "Akira backend in " + settings.ENVIRONMENT}
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True) 
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True) 
