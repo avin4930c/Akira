@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes.chat import chat
 from app.settings.settings import settings
-from server.app.core.lifespan import lifespan
+from app.core.lifespan import lifespan
 from app.middleware.logging import logging_middleware
+from app.api.v1.chat_router import chat_router
 
 app = FastAPI(lifespan=lifespan)
 
-app.add_middleware("http")(logging_middleware)
+app.middleware("http")(logging_middleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,12 +17,12 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-app.include_router(chat.chat_router, prefix="/chat")
+app.include_router(chat_router, prefix="/chat")
 
 @app.get("/")
 async def root():
     return {"Backend": "Akira backend in " + settings.ENVIRONMENT}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True) 
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}

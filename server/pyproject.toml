@@ -3,7 +3,7 @@ name = "server"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Your Name",email = "you@example.com"}
+    {name = "Avinash Haribaskar",email = "you@example.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
@@ -16,18 +16,29 @@ dependencies = [
     "langgraph>=0.5.3",
     "tavily-python>=0.7.10",
     "langsmith (>=0.4.8,<0.5.0)",
-    "colorlog (>=6.9.0,<7.0.0)"
+    "colorlog (>=6.9.0,<7.0.0)",
+    "langchain-google-genai (>=2.1.8,<3.0.0)",
+    "pydantic-settings (>=2.10.1,<3.0.0)"
 ]
 dev = [
     "ruff>=0.12.4,<0.13.0"
 ]
 
 [tool.poetry]
+packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 
 [tool.poetry.group.dev.dependencies]
 
+[tool.poetry.scripts]
+dev = "scripts.uvicorn_run:run"
+lint = "scripts.lint:run_lint"
+lint-fix = "scripts.lint:run_lint_fix"
+format = "scripts.lint:run_format"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+

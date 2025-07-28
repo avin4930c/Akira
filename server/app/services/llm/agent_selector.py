@@ -1,4 +1,4 @@
-from src.prompts.all_agents_prompt import BASE_PROMPT
+from app.prompts.all_agents_prompt import BASE_PROMPT
 
 class AgentSelector:
     def __init__(self, llm_service):

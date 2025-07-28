@@ -1,6 +1,5 @@
 import logging
 import os
-from app.settings import settings
 
 from colorlog import ColoredFormatter
 
@@ -8,8 +7,6 @@ from colorlog import ColoredFormatter
 def setup_logger(
     logger_name="app_logger",
     log_dir: str = "logs",
-    max_bytes: int = 10485760,  # 10MB
-    backup_count: int = 5,
     log_level: str = "INFO",
 ):
     # Create logs directory if it doesn't exist
