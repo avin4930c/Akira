@@ -1,5 +1,6 @@
 import logging
 import os
+from app.settings.settings import settings
 
 from colorlog import ColoredFormatter
 
@@ -11,6 +12,9 @@ def setup_logger(
 ):
     # Create logs directory if it doesn't exist
     os.makedirs(log_dir, exist_ok=True)
+    
+    if log_level is None:
+        log_level = settings.LOG_LEVEL if hasattr(settings, "LOG_LEVEL") and settings.LOG_LEVEL else "INFO"
 
     logger = logging.getLogger(logger_name)
     logger.setLevel(log_level.upper())

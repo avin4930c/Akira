@@ -1,6 +1,6 @@
 from fastapi import Request
 
-from app.core.logger_config import setup_logger
+from app.config.logger_config import setup_logger
 
 log = setup_logger("app")
 

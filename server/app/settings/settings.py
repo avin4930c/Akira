@@ -7,7 +7,7 @@ class Settings(BaseSettings):
         env_file=".env",
         extra="ignore",
     )
-    
+
     LOG_LEVEL: str = "debug"
     ENVIRONMENT: str = ""
     LANGSMITH_API_KEY: Optional[str] = None
