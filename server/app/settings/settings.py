@@ -17,5 +17,6 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = [""]
     GEMINI_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
+    CLERK_JWT_PUBLIC_KEY: Optional[str] = None
 
 settings = Settings()
