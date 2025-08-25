@@ -10,9 +10,14 @@ export const apiClient = axios.create({
 export const setupInterceptors = (getToken: () => Promise<string | null>) => {
   apiClient.interceptors.request.use(
     async (config) => {
-      const token = await getToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      try {
+        const token = await getToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('Error getting token:', error);
+        // Continue without token
       }
       return config;
     },
