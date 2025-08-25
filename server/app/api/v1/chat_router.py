@@ -11,9 +11,10 @@ async def chat_websocket(websocket: WebSocket, chat_service: ChatService = Depen
     try:
         while True:
             user_query = await websocket.receive_text()
-
+            
             response = await chat_service.process_message(user_query)
-            await websocket.send_text(response)
+                        
+            await websocket.send_text(response.content)
 
     except Exception as e:
         print(f"WebSocket error: {e}")
