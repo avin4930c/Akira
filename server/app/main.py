@@ -5,8 +5,11 @@ from app.core.lifespan import lifespan
 from app.middleware.logging import logging_middleware
 from app.api.v1.chat_router import chat_router
 from app.middleware.clerk_auth_middleware import ClerkAuthenticationMiddleware
+from app.utils.langsmith_utils import apply_langsmith_env
 
 app = FastAPI(lifespan=lifespan)
+
+app.on_event("startup")(apply_langsmith_env(settings))
 
 app.add_middleware(ClerkAuthenticationMiddleware)
 

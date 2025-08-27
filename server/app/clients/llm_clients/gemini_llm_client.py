@@ -23,5 +23,5 @@ class GeminiLLMClient(BaseLLMClient):
         
         return self._client
         
-def get_gemini_llm_client(model_name: str = "gemini-2.5-pro") -> GeminiLLMClient:
+def get_gemini_llm_client(model_name: str = "gemini-2.5-flash") -> GeminiLLMClient:
     return GeminiLLMClient(model_name=model_name)
