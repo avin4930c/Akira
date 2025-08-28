@@ -1,26 +1,208 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Core Brand Colors */
+    --background: 0 0% 100%;
+    --foreground: 210 11% 15%;
+    
+    /* Card & Surface Colors */
+    --card: 0 0% 100%;
+    --card-foreground: 210 11% 15%;
+    
+    /* Interactive Elements */
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 11% 15%;
+    
+    /* Primary Brand - Deep Navy */
+    --primary: 210 100% 12%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 210 100% 20%;
+    
+    /* Secondary - Warm Grays */
+    --secondary: 210 9% 96%;
+    --secondary-foreground: 210 11% 15%;
+    
+    /* Muted Elements */
+    --muted: 210 9% 96%;
+    --muted-foreground: 210 6% 46%;
+    
+    /* Accent - Motorcycle Orange */
+    --accent: 24 100% 58%;
+    --accent-foreground: 0 0% 98%;
+    --accent-soft: 24 100% 95%;
+    
+    /* Status Colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+    
+    /* UI Elements */
+    --border: 210 12% 91%;
+    --input: 210 12% 95%;
+    --ring: 24 100% 58%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(210 100% 12%), hsl(210 100% 20%));
+    --gradient-accent: linear-gradient(135deg, hsl(24 100% 58%), hsl(20 100% 65%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 9% 98%));
+    --gradient-hero: linear-gradient(135deg, hsl(210 100% 12%) 0%, hsl(210 100% 20%) 50%, hsl(24 100% 58%) 100%);
+    
+    /* Shadows */
+    --shadow-elegant: 0 10px 30px -10px hsl(210 100% 12% / 0.1);
+    --shadow-glow: 0 0 40px hsl(24 100% 58% / 0.15);
+    --shadow-card: 0 4px 20px hsl(210 100% 12% / 0.08);
+    
+    /* Typography & Spacing */
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Core Colors - Dark Mode */
+    --background: 210 11% 6%;
+    --foreground: 210 9% 95%;
+    
+    /* Card & Surface Colors */
+    --card: 210 11% 8%;
+    --card-foreground: 210 9% 95%;
+    
+    /* Interactive Elements */
+    --popover: 210 11% 8%;
+    --popover-foreground: 210 9% 95%;
+    
+    /* Primary - Bright in Dark Mode */
+    --primary: 210 100% 65%;
+    --primary-foreground: 210 11% 6%;
+    --primary-glow: 210 100% 70%;
+    
+    /* Secondary - Dark Surfaces */
+    --secondary: 210 9% 12%;
+    --secondary-foreground: 210 9% 85%;
+    
+    /* Muted Elements */
+    --muted: 210 9% 12%;
+    --muted-foreground: 210 6% 65%;
+    
+    /* Accent - Vibrant Orange */
+    --accent: 24 100% 62%;
+    --accent-foreground: 210 11% 6%;
+    --accent-soft: 24 100% 15%;
+    
+    /* Status Colors */
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 210 11% 6%;
+    --success: 142 76% 45%;
+    --success-foreground: 210 11% 6%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 210 11% 6%;
+    
+    /* UI Elements */
+    --border: 210 9% 15%;
+    --input: 210 9% 12%;
+    --ring: 24 100% 62%;
+    
+    /* Gradients - Dark Mode */
+    --gradient-primary: linear-gradient(135deg, hsl(210 100% 65%), hsl(210 100% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(24 100% 62%), hsl(20 100% 68%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 11% 6%), hsl(210 11% 8%));
+    --gradient-hero: linear-gradient(135deg, hsl(210 11% 6%) 0%, hsl(210 100% 65%) 50%, hsl(24 100% 62%) 100%);
+    
+    /* Shadows - Enhanced for Dark */
+    --shadow-elegant: 0 10px 30px -10px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 40px hsl(24 100% 62% / 0.25);
+    --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.2);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
+
+@layer components {
+  /* Hero Section Styles */
+  .hero-gradient {
+    background: var(--gradient-hero);
+  }
+  
+  .accent-gradient {
+    background: var(--gradient-accent);
+  }
+  
+  .subtle-gradient {
+    background: var(--gradient-subtle);
+  }
+  
+  /* Glass Morphism */
+  .glass {
+    @apply backdrop-blur-md bg-background/80 border border-border/50;
+  }
+  
+  /* Glow Effects */
+  .glow-accent {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  /* Text Animations */
+  .text-shimmer {
+    background: linear-gradient(120deg, hsl(var(--foreground)) 40%, hsl(var(--accent)) 50%, hsl(var(--foreground)) 60%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+  
+  @keyframes shimmer {
+    0%, 100% {
+      background-position: 200% center;
+    }
+    50% {
+      background-position: -200% center;
+    }
+  }
 }
