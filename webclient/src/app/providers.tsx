@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { setupInterceptors } from '@/services/api/client';
+import { Toaster } from '@/components/ui/sonner';
 
 function ApiInterceptorSetup({ children }: { children: React.ReactNode }) {
   const { getToken } = useAuth();
@@ -29,6 +30,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ClerkProvider>
       <QueryClientProvider client={queryClient}>
         <ApiInterceptorSetup>{children}</ApiInterceptorSetup>
+        <Toaster />
       </QueryClientProvider>
     </ClerkProvider>
   );
