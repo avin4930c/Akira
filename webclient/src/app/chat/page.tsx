@@ -24,9 +24,9 @@ interface ChatSession {
 
 const ChatSidebar = () => {
   const [sessions] = useState<ChatSession[]>([
-    { id: '1', title: 'Motorcycle maintenance basics', lastMessage: new Date() },
-    { id: '2', title: 'Engine troubleshooting', lastMessage: new Date(Date.now() - 86400000) },
-    { id: '3', title: 'Brake system questions', lastMessage: new Date(Date.now() - 172800000) },
+    { id: '1', title: 'Motorcycle maintenance basics', lastMessage: new Date('2025-08-28T10:00:00Z') },
+    { id: '2', title: 'Engine troubleshooting', lastMessage: new Date('2025-08-27T15:30:00Z') },
+    { id: '3', title: 'Brake system questions', lastMessage: new Date('2025-08-26T09:15:00Z') },
   ]);
 
   return (
@@ -51,7 +51,7 @@ const ChatSidebar = () => {
               </div>
               <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                 <Clock className="w-3 h-3" />
-                <span>{session.lastMessage.toLocaleDateString()}</span>
+                <span>{session.lastMessage.toLocaleDateString('en-US')}</span>
               </div>
             </div>
           ))}
@@ -67,7 +67,7 @@ export default function ChatPage() {
       id: '1',
       content: "Hello! I'm Akira, your AI assistant for all things motorcycle. I can help you with maintenance, troubleshooting, riding tips, and more. What would you like to know?",
       sender: 'assistant',
-      timestamp: new Date(),
+      timestamp: new Date('2025-08-28T09:00:00Z'),
     },
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -164,7 +164,7 @@ export default function ChatPage() {
                       }`}>
                         <p className="text-sm leading-relaxed">{message.content}</p>
                         <p className="text-xs opacity-70 mt-2">
-                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {message.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                     </div>
