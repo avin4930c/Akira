@@ -39,7 +39,6 @@ export default function WelcomeInput({
         <Input
           value={inputValue}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e.target.value)}
-          onKeyPress={handleKeyPress}
           placeholder={placeholder}
           className="h-12 text-base pr-12 border-border/50 focus:border-accent"
         />

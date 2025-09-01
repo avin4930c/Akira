@@ -29,7 +29,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ sessions }) => {
             
             <div className="space-y-2">
               {sessions.map((session) => (
-                <ChatSessionBox session={session} />
+                <ChatSessionBox key={session.id} session={session} />
               ))}
             </div>
           </SidebarContent>
