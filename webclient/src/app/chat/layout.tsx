@@ -21,12 +21,12 @@ export default function ChatLayout({ children }: {
     return (
         <div className="min-h-screen bg-gradient-subtle">
             <Navigation />
-            
+
             <SidebarProvider>
                 <div className="flex w-full pt-16">
                     <ChatSidebar sessions={sessions} />
-                    
-                    <main className="flex-1 flex flex-col h-screen pt-0">
+
+                    <main className="flex-1 flex flex-col h-screen pt-0 ml-0 md:ml-64">
                         {children}
                     </main>
                 </div>
