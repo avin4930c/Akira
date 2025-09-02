@@ -26,7 +26,7 @@ export default function ChatLayout({ children }: {
                 <div className="flex w-full pt-16">
                     <ChatSidebar sessions={sessions} />
 
-                    <main className="flex-1 flex flex-col h-screen pt-0 ml-0 md:ml-64">
+                    <main className="flex-1 flex flex-col h-screen pt-0 ml-0 md:ml-80">
                         {children}
                     </main>
                 </div>

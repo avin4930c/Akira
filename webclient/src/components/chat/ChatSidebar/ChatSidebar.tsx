@@ -12,7 +12,7 @@ interface ChatSidebarProps {
 
 const ChatSidebar: React.FC<ChatSidebarProps> = ({ sessions }) => {
   return (
-    <Sidebar className="border-r border-border/50">
+    <Sidebar className="md:w-[320px] border-r border-border/50">
           <SidebarContent className="p-4">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-foreground">Chat History</h2>
