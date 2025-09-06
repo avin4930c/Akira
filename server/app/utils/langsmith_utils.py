@@ -4,7 +4,7 @@ from app.config.logger_config import setup_logger
 log = setup_logger(__name__)
 
 def apply_langsmith_env(settings):
-    if not settings.LANGCHAIN_TRACING == "true":
+    if not settings.LANGSMITH_TRACING:
         log.info("Langsmith tracing is disabled.")
         return
     

@@ -8,7 +8,7 @@ log = setup_logger(__name__)
 class GeminiLLMClient(BaseLLMClient):
     _client: ChatGoogleGenerativeAI | None = None
     
-    async def get_llm_client(self) -> ChatGoogleGenerativeAI:
+    def get_llm_client(self) -> ChatGoogleGenerativeAI:
         if self._client:
             return self._client
         
