@@ -22,7 +22,11 @@ class ChatRequest(BaseModel):
 
 
 @chat_router.websocket("/ws")
-async def chat_websocket(websocket: WebSocket, chat_service: ChatService = Depends(get_chat_service), workflow: CompiledStateGraph = Depends(get_chat_workflow)):
+async def chat_websocket(
+    websocket: WebSocket,
+    chat_service: ChatService = Depends(get_chat_service),
+    workflow: CompiledStateGraph = Depends(get_chat_workflow),
+):
     userId = None
 
     try:
@@ -40,12 +44,16 @@ async def chat_websocket(websocket: WebSocket, chat_service: ChatService = Depen
                 await chat_service.save_message(
                     thread_id=chat_request.thread_id,
                     content=chat_request.message,
-                    sender="user"
+                    sender="user",
                 )
 
-                previous_messages = await chat_service.get_chat_messages(chat_request.thread_id)
-                langchain_messages = chat_service.convert_to_langchain_messages(previous_messages)
-                
+                previous_messages = await chat_service.get_chat_messages(
+                    chat_request.thread_id
+                )
+                langchain_messages = chat_service.convert_to_langchain_messages(
+                    previous_messages
+                )
+
                 chat_workflow_input = ChatWorkflowState(
                     messages=langchain_messages,
                     query=chat_request.message,
@@ -56,19 +64,28 @@ async def chat_websocket(websocket: WebSocket, chat_service: ChatService = Depen
                 partial = True
                 message_id = str(uuid4())
 
-                async for ai_response, meta_data in workflow.astream(chat_workflow_input,config={"configurable": {"thread_id": chat_request.thread_id}}, stream_mode="messages"):
-                    if hasattr(ai_response, 'content') and ai_response.content:
+                async for ai_response, meta_data in workflow.astream(
+                    chat_workflow_input,
+                    config={"configurable": {"thread_id": chat_request.thread_id}},
+                    stream_mode="messages",
+                ):
+                    if hasattr(ai_response, "content") and ai_response.content:
                         new_content = ai_response.content
                         existing_message += new_content
-                        
+
                         is_final_chunk = False
-                        if hasattr(ai_response, 'response_metadata') and ai_response.response_metadata:
-                            finish_reason = str(ai_response.response_metadata.get("finish_reason"))
+                        if (
+                            hasattr(ai_response, "response_metadata")
+                            and ai_response.response_metadata
+                        ):
+                            finish_reason = str(
+                                ai_response.response_metadata.get("finish_reason")
+                            )
                             if finish_reason.lower() in ["stop", "end_turn", "length"]:
                                 is_final_chunk = True
-                        
+
                         partial = not is_final_chunk
-                        
+
                         response_message = {
                             "type": "ai_response_stream",
                             "data": {
@@ -77,27 +94,31 @@ async def chat_websocket(websocket: WebSocket, chat_service: ChatService = Depen
                                 "thread_id": chat_request.thread_id,
                                 "partial": partial,
                                 "timestamp": datetime.now().isoformat(),
-                                **meta_data
-                            }
+                                **meta_data,
+                            },
                         }
-                        
+
                         await webSocketConnectionManager.send_message(
-                            user_id=userId, 
-                            message=json.dumps(response_message)
+                            user_id=userId, message=json.dumps(response_message)
                         )
-                
+
                 # After streaming completes, save the complete message
                 if existing_message:
                     await chat_service.save_message(
                         thread_id=chat_request.thread_id,
                         content=existing_message,
-                        sender="assistant"
+                        sender="assistant",
                     )
             except Exception as e:
                 log.error(f"Error processing chat request: {e}")
                 traceback.print_exc()
-                error_message = {"type": "error", "content": {"message": "Error processing chat request"}}
-                await webSocketConnectionManager.send_message(userId, json.dumps(error_message))
+                error_message = {
+                    "type": "error",
+                    "content": {"message": "Error processing chat request"},
+                }
+                await webSocketConnectionManager.send_message(
+                    userId, json.dumps(error_message)
+                )
 
     except Exception as e:
         log.error(f"WebSocket error for user {userId}: {e}")
@@ -114,18 +135,24 @@ async def list_chat_threads(chat_service: ChatService = Depends(get_chat_service
 
 
 @chat_router.get("/threads/{thread_id}")
-async def get_chat_thread(thread_id: str, chat_service: ChatService = Depends(get_chat_service)):
+async def get_chat_thread(
+    thread_id: str, chat_service: ChatService = Depends(get_chat_service)
+):
     thread = await chat_service.get_chat_thread(thread_id)
     return thread
 
 
 @chat_router.post("/threads")
-async def create_chat_thread(user_query: str, chat_service: ChatService = Depends(get_chat_service)):
+async def create_chat_thread(
+    user_query: str, chat_service: ChatService = Depends(get_chat_service)
+):
     new_thread = await chat_service.create_chat_thread(user_query)
     return new_thread
 
 
 @chat_router.get("/threads/{thread_id}/messages")
-async def get_chat_messages(thread_id: str, chat_service: ChatService = Depends(get_chat_service)):
+async def get_chat_messages(
+    thread_id: str, chat_service: ChatService = Depends(get_chat_service)
+):
     messages = await chat_service.get_chat_messages(thread_id)
     return messages

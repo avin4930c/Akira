@@ -8,7 +8,9 @@ PUBLIC_ROUTES = [
 ]
 
 if settings.ENVIRONMENT == "development":
-    PUBLIC_ROUTES.extend([
-        re.compile(r"^/docs$"),
-        re.compile(r"^/openapi.json$"),
-    ])
+    PUBLIC_ROUTES.extend(
+        [
+            re.compile(r"^/docs$"),
+            re.compile(r"^/openapi.json$"),
+        ]
+    )

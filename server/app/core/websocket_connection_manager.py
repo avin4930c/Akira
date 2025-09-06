@@ -17,7 +17,9 @@ class WebSocketConnectionManager:
         if result:
             websocket, user_id = result
             self.active_connections[user_id] = websocket
-            log.info(f"User {user_id} connected. Total connections: {len(self.active_connections)}")
+            log.info(
+                f"User {user_id} connected. Total connections: {len(self.active_connections)}"
+            )
             return user_id
         return None
 
@@ -31,7 +33,9 @@ class WebSocketConnectionManager:
             websocket = self.active_connections[user_id]
             await websocket.close()
             del self.active_connections[user_id]
-            log.info(f"User {user_id} disconnected. Total connections: {len(self.active_connections)}")
+            log.info(
+                f"User {user_id} disconnected. Total connections: {len(self.active_connections)}"
+            )
 
     async def send_message(self, user_id: str, message: str):
         if user_id in self.active_connections:

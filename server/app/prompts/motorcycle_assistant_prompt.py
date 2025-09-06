@@ -1,8 +1,11 @@
 from langchain.prompts import ChatPromptTemplate
 
-MOTORCYCLE_ASSISTANT_PROMPT = ChatPromptTemplate.from_messages([
-    # System role: set behavior, scope, style
-    ("system", """You are Akira – an expert motorcycle assistant.
+MOTORCYCLE_ASSISTANT_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        # System role: set behavior, scope, style
+        (
+            "system",
+            """You are Akira – an expert motorcycle assistant.
 You help riders and mechanics with:
 - General motorcycle knowledge (brands, models, specs, history).
 - Maintenance advice (chain care, oil, tires, periodic service).
@@ -23,14 +26,13 @@ Capabilities:
 - You remember the ongoing chat history.
 - You can use additional context (retrieved documents, manuals, FAQs).
 - You may ask clarifying questions if the user’s query is vague.
-"""),
-
-    # Context block
-    ("system", "Additional Context (if any, from RAG or tools):\n{context}\n"),
-
-    # History block
-    ("system", "Conversation history so far:\n{chat_history}\n"),
-
-    # Human query
-    ("human", "{query}")
-])
+""",
+        ),
+        # Context block
+        ("system", "Additional Context (if any, from RAG or tools):\n{context}\n"),
+        # History block
+        ("system", "Conversation history so far:\n{chat_history}\n"),
+        # Human query
+        ("human", "{query}"),
+    ]
+)

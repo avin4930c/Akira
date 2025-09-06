@@ -25,9 +25,11 @@ app.add_middleware(
 
 app.include_router(chat_router, prefix="/chat")
 
+
 @app.get("/")
 async def root():
     return {"Backend": "Akira backend in " + settings.ENVIRONMENT}
+
 
 @app.get("/health")
 async def health_check():

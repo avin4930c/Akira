@@ -34,9 +34,11 @@ class SecureWebsocket:
 
             parts = auth_header.split(",")
             if len(parts) < 2:
-                log.error("Malformed Sec-WebSocket-Protocol header: missing session token")
+                log.error(
+                    "Malformed Sec-WebSocket-Protocol header: missing session token"
+                )
                 return None
-            
+
             session_token = parts[1].lstrip()
 
             if not session_token:
@@ -50,8 +52,7 @@ class SecureWebsocket:
             log.error(f"Authentication failed: {e.detail}")
             return None
         except Exception as e:
-            log.error(
-                f"Exception while authenticating websocket connection: {e}")
+            log.error(f"Exception while authenticating websocket connection: {e}")
             return None
 
 

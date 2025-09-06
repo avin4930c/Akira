@@ -11,18 +11,36 @@ class ChatService:
     async def create_chat_session(self, user_query: str):
         random_uuid = str(uuid4())
         created_time = datetime.now().isoformat()
-        truncated_user_query = (user_query[:20] + '...') if len(user_query) > 20 else user_query
-        session = {"sessionId": random_uuid, "title": truncated_user_query, "createdAt": created_time}
+        truncated_user_query = (
+            (user_query[:20] + "...") if len(user_query) > 20 else user_query
+        )
+        session = {
+            "sessionId": random_uuid,
+            "title": truncated_user_query,
+            "createdAt": created_time,
+        }
         return session
 
-    async def get_chat_session(self, session_id: str): # TODO: Replace with real data
-        mock_session = {"sessionId": session_id, "title": f"Session {session_id}", "createdAt": datetime.now().isoformat()}
+    async def get_chat_session(self, session_id: str):  # TODO: Replace with real data
+        mock_session = {
+            "sessionId": session_id,
+            "title": f"Session {session_id}",
+            "createdAt": datetime.now().isoformat(),
+        }
         return mock_session
 
-    async def list_chat_sessions(self): #TODO: Replace with real data
+    async def list_chat_sessions(self):  # TODO: Replace with real data
         mock_sessions = [
-            {"sessionId": str(uuid4()), "title": "Session 1", "createdAt": datetime.now().isoformat()},
-            {"sessionId": str(uuid4()), "title": "Session 2", "createdAt": datetime.now().isoformat()},
+            {
+                "sessionId": str(uuid4()),
+                "title": "Session 1",
+                "createdAt": datetime.now().isoformat(),
+            },
+            {
+                "sessionId": str(uuid4()),
+                "title": "Session 2",
+                "createdAt": datetime.now().isoformat(),
+            },
         ]
         return mock_sessions
 
@@ -35,12 +53,14 @@ class ChatService:
                 "messageId": str(uuid4()),
                 "content": "Hello, how can I help you?",
                 "sender": "assistant",
-                "createdAt": datetime.now().isoformat()
+                "createdAt": datetime.now().isoformat(),
             }
         ]
         return mock_messages
 
-    def convert_to_langchain_messages(self, messages: List[Dict[str, Any]]) -> List[Any]:
+    def convert_to_langchain_messages(
+        self, messages: List[Dict[str, Any]]
+    ) -> List[Any]:
         """Convert database messages to LangChain message format"""
         langchain_messages = []
 
@@ -68,7 +88,7 @@ class ChatService:
             "thread_id": thread_id,
             "content": content,
             "sender": sender,
-            "createdAt": datetime.now().isoformat()
+            "createdAt": datetime.now().isoformat(),
         }
         return message
 
