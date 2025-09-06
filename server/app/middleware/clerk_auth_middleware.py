@@ -32,7 +32,7 @@ class ClerkAuthenticationMiddleware(BaseHTTPMiddleware):
                 logger.warning(f"Missing token for {method} {path}")
                 return JSONResponse(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    content={"detail": "Authentication token required"}
+                    content={"detail": "Authentication token required"},
                 )
 
             try:
@@ -42,14 +42,14 @@ class ClerkAuthenticationMiddleware(BaseHTTPMiddleware):
                 logger.error(f"Token verification failed: {str(e.detail)}")
                 return JSONResponse(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    content={"detail": str(e.detail)}
+                    content={"detail": str(e.detail)},
                 )
 
         except Exception as e:
             logger.error(f"Authentication error: {str(e)}")
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={"detail": "Authentication service error"}
+                content={"detail": "Authentication service error"},
             )
 
         return await call_next(request)

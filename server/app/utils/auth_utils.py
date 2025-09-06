@@ -4,6 +4,7 @@ from fastapi import Request, HTTPException
 from jwt import PyJWTError, decode
 from app.settings.settings import settings
 
+
 class AuthUtil:
     def __init__(self):
         self.public_key = settings.CLERK_JWT_PUBLIC_KEY
@@ -15,8 +16,7 @@ class AuthUtil:
         """
         try:
             if not session_token:
-                raise HTTPException(
-                    status_code=401, detail="Missing or invalid token")
+                raise HTTPException(status_code=401, detail="Missing or invalid token")
 
             payload = decode(
                 session_token,
@@ -27,7 +27,8 @@ class AuthUtil:
             return payload["sub"]
         except PyJWTError as e:
             raise HTTPException(
-                status_code=401, detail=f"Invalid token present: {e!s}") from e
+                status_code=401, detail=f"Invalid token present: {e!s}"
+            ) from e
 
     @staticmethod
     def extract_bearer_token(request: Request) -> Optional[str]:
@@ -48,9 +49,7 @@ class AuthUtil:
 
     @staticmethod
     def is_public_route(
-        path: str,
-        method: str,
-        public_routes: List[re.Pattern]
+        path: str, method: str, public_routes: List[re.Pattern]
     ) -> bool:
         """Check if route is public and doesn't require authentication"""
 
