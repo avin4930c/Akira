@@ -30,10 +30,8 @@ class ChatWorkflow:
             query=query
         )
                 
-        full_content = ""
         async for chunk in self.llm.astream(formatted_prompt):
             if hasattr(chunk, 'content') and chunk.content:
-                full_content += chunk.content
                 yield {"messages": [chunk]}
                 
     def get_workflow(self):

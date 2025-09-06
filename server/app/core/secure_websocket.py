@@ -32,7 +32,12 @@ class SecureWebsocket:
                 log.error("Missing Sec-WebSocket-Protocol header")
                 return None
 
-            session_token = auth_header.split(",")[1].lstrip()
+            parts = auth_header.split(",")
+            if len(parts) < 2:
+                log.error("Malformed Sec-WebSocket-Protocol header: missing session token")
+                return None
+            
+            session_token = parts[1].lstrip()
 
             if not session_token:
                 log.error("Empty session token in protocol header")
