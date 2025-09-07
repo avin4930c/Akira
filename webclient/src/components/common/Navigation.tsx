@@ -28,7 +28,7 @@ const Navigation = () => {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <nav className="fixed top-0 w-full z-50 glass border-b border-border/50">
+    <nav className="fixed top-0 w-full max-h-[70px] z-50 glass border-b border-border/50">
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
