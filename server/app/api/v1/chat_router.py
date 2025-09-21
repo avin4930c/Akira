@@ -4,12 +4,13 @@ from uuid import uuid4
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel
-from fastapi import WebSocket, APIRouter, Depends
+from fastapi import WebSocket, APIRouter, Depends, Request
 from langgraph.graph.state import CompiledStateGraph
 from app.services.chat_service import get_chat_service, ChatService
 from app.core.websocket_connection_manager import webSocketConnectionManager
 from app.config.logger_config import setup_logger
 from app.workflows.chat_workflow import get_chat_workflow, ChatWorkflowState
+from app.utils.chat_utils import convert_to_langchain_messages
 
 chat_router = APIRouter()
 log = setup_logger(__name__)
@@ -48,16 +49,25 @@ async def chat_websocket(
                 )
 
                 previous_messages = await chat_service.get_chat_messages(
-                    chat_request.thread_id
+                    chat_request.thread_id,
+                    limit=15
                 )
-                langchain_messages = chat_service.convert_to_langchain_messages(
+                previous_messages = list(reversed(previous_messages))
+                
+                langchain_messages = convert_to_langchain_messages(
                     previous_messages
                 )
+                
+                db_summary = await chat_service.get_thread_summary(chat_request.thread_id)
 
                 chat_workflow_input = ChatWorkflowState(
                     messages=langchain_messages,
                     query=chat_request.message,
                     thread_id=chat_request.thread_id,
+                    summary=db_summary.content if db_summary else None,
+                    summary_updated=False,
+                    last_summary_message_id=db_summary.last_message_id if db_summary else None,
+                    db_message_count=len(langchain_messages)
                 )
 
                 existing_message = ""
@@ -66,10 +76,12 @@ async def chat_websocket(
 
                 async for ai_response, meta_data in workflow.astream(
                     chat_workflow_input,
-                    config={"configurable": {"thread_id": chat_request.thread_id}},
+                    config={"configurable": {
+                        "thread_id": chat_request.thread_id}},
                     stream_mode="messages",
                 ):
-                    if hasattr(ai_response, "content") and ai_response.content:
+                    if (hasattr(ai_response, "content") and ai_response.content and 
+                        meta_data.get("langgraph_node") == "assistant"):
                         new_content = ai_response.content
                         existing_message += new_content
 
@@ -79,7 +91,8 @@ async def chat_websocket(
                             and ai_response.response_metadata
                         ):
                             finish_reason = str(
-                                ai_response.response_metadata.get("finish_reason")
+                                ai_response.response_metadata.get(
+                                    "finish_reason")
                             )
                             if finish_reason.lower() in ["stop", "end_turn", "length"]:
                                 is_final_chunk = True
@@ -99,16 +112,30 @@ async def chat_websocket(
                         }
 
                         await webSocketConnectionManager.send_message(
-                            user_id=userId, message=json.dumps(response_message)
+                            user_id=userId, message=json.dumps(
+                                response_message)
                         )
 
                 # After streaming completes, save the complete message
                 if existing_message:
-                    await chat_service.save_message(
+                    last_saved_message = await chat_service.save_message(
                         thread_id=chat_request.thread_id,
                         content=existing_message,
                         sender="assistant",
                     )
+                
+                # Save summary when updated
+                final_state = workflow.get_state(config={"configurable": {"thread_id": chat_request.thread_id}})
+                if (final_state and 
+                    final_state.values.get("summary_updated") and
+                    final_state.values.get("summary")):
+
+                    if last_saved_message:
+                        await chat_service.save_summary(
+                            thread_id=chat_request.thread_id,
+                            summary_content=final_state.values["summary"],
+                            last_message_id=last_saved_message.id
+                        )
             except Exception as e:
                 log.error(f"Error processing chat request: {e}")
                 traceback.print_exc()
@@ -136,17 +163,15 @@ async def list_chat_threads(chat_service: ChatService = Depends(get_chat_service
 
 @chat_router.get("/threads/{thread_id}")
 async def get_chat_thread(
-    thread_id: str, chat_service: ChatService = Depends(get_chat_service)
+    request: Request, thread_id: str, chat_service: ChatService = Depends(get_chat_service)
 ):
-    thread = await chat_service.get_chat_thread(thread_id)
+    thread = await chat_service.get_chat_thread(thread_id, user_id=request.state.user_id)
     return thread
 
 
 @chat_router.post("/threads")
-async def create_chat_thread(
-    user_query: str, chat_service: ChatService = Depends(get_chat_service)
-):
-    new_thread = await chat_service.create_chat_thread(user_query)
+async def create_chat_thread(request: Request, chat_service: ChatService = Depends(get_chat_service)):
+    new_thread = await chat_service.create_chat_thread(user_id=request.state.user_id, title="New Chat")
     return new_thread
 
 

@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     LOG_LEVEL: str = "debug"
     ENVIRONMENT: str = ""
+    DATABASE_URL: str = ""
     LANGSMITH_API_KEY: Optional[str] = None
     LANGSMITH_ENDPOINT: str = "https://api.smith.langchain.com"
     LANGSMITH_PROJECT: Optional[str] = None

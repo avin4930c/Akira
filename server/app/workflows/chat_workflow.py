@@ -4,11 +4,16 @@ from langgraph.checkpoint.memory import MemorySaver
 from app.clients.llm_clients.base_llm_client import BaseLLMClient
 from app.clients.llm_clients.gemini_llm_client import get_gemini_llm_client
 from app.prompts.motorcycle_assistant_prompt import MOTORCYCLE_ASSISTANT_PROMPT
-
+from app.prompts.summarization_prompt import SUMMARIZATION_PROMPT
+from app.utils.chat_utils import convert_chat_history_to_string
 
 class ChatWorkflowState(MessagesState):
     query: str = None
     thread_id: str = None
+    last_summary_message_id: str = None
+    summary: str = None
+    summary_updated: bool = False
+    db_message_count: int = 0
 
 
 class ChatWorkflow:
@@ -21,17 +26,13 @@ class ChatWorkflow:
     async def assistant(self, state: ChatWorkflowState):
         message_history = state["messages"]
         query = state["query"]
+        summary = state.get("summary", "")
 
-        chat_history_str = ""
-        for msg in message_history:
-            if hasattr(msg, "content"):
-                role = (
-                    "Human" if msg.__class__.__name__ == "HumanMessage" else "Assistant"
-                )
-                chat_history_str += f"{role}: {msg.content}\n"
+        chat_history_str = convert_chat_history_to_string(message_history)
 
         formatted_prompt = MOTORCYCLE_ASSISTANT_PROMPT.format_messages(
             context="",  # Add Tavily search results here later
+            summary=summary,
             chat_history=chat_history_str,
             query=query,
         )
@@ -39,13 +40,47 @@ class ChatWorkflow:
         async for chunk in self.llm.astream(formatted_prompt):
             if hasattr(chunk, "content") and chunk.content:
                 yield {"messages": [chunk]}
+                
+    async def should_summarize(self, state: ChatWorkflowState):
+        if state["db_message_count"] < 5:
+            return END
+        
+        message_ids = [msg.id for msg in state["messages"]]
+        last_summary_message_id = state.get("last_summary_message_id")
+        
+        if not last_summary_message_id:
+            return "summarize"
+        
+        if last_summary_message_id not in message_ids:
+            return "summarize"
+        else:
+            return END
+        
+    async def summarize(self, state: ChatWorkflowState):
+        summary = state.get("summary", "")
+        message_history = convert_chat_history_to_string(state["messages"])
+        
+        formatted_prompt = SUMMARIZATION_PROMPT.format_messages(
+            existing_summary=summary,
+            conversation_messages=message_history
+        )
+        
+        op = self.llm.invoke(formatted_prompt)
+        new_summary = op.content.strip()
+        
+        return {
+            "summary": new_summary,
+            "summary_updated": True,
+        }
 
     def get_workflow(self):
         builder = StateGraph(ChatWorkflowState)
         builder.add_node("assistant", self.assistant)
+        builder.add_node("summarize", self.summarize)
 
         builder.add_edge(START, "assistant")
-        builder.add_edge("assistant", END)
+        builder.add_conditional_edges("assistant", self.should_summarize)
+        builder.add_edge("summarize", END)
 
         return builder.compile(checkpointer=MemorySaver())
 
