@@ -1,39 +1,58 @@
 import { Sidebar, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar'
-import { ChatSession } from '@/types/chat';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { ChatThread } from '@/types/chat';
 import React from 'react'
-import ChatSessionBox from './ChatSessionBox';
+import ChatSessionBox from './ChatThreadBox';
+import NewChatButton from '../NewChatButton';
 
 interface ChatSidebarProps {
-  sessions: ChatSession[];
+  threads?: ChatThread[];
+  loading?: boolean;
+  error?: Error | null;
 }
 
-const ChatSidebar: React.FC<ChatSidebarProps> = ({ sessions }) => {
+const ChatSidebar: React.FC<ChatSidebarProps> = ({ threads, loading, error }) => {
+  if (loading) {
+    return (
+      <div className="md:w-[320px] border-r border-border/50 p-4">
+        <p className="text-sm text-muted-foreground">Loading chat threads...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="md:w-[320px] border-r border-border/50 p-4">
+        <p className="text-sm text-red-500">Error loading chat threads</p>
+      </div>
+    );
+  }
+
+  if (!threads || threads.length === 0) {
+    return (
+      <div className="md:w-[320px] border-r border-border/50 p-4">
+        <p className="text-sm text-muted-foreground">No chat threads available. Start a new chat!</p>
+        <NewChatButton />
+      </div>
+    );
+  }
+
   return (
     <Sidebar className="md:w-[320px] border-r border-border/50">
-          <SidebarContent className="p-4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-foreground">Chat History</h2>
-              <SidebarTrigger />
-            </div>
-            
-            {/* New Chat Button */}
-            <Link href="/chat" className="block mb-4">
-              <Button className="w-full justify-start" variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                New Chat
-              </Button>
-            </Link>
-            
-            <div className="space-y-2">
-              {sessions.map((session) => (
-                <ChatSessionBox key={session.id} session={session} />
-              ))}
-            </div>
-          </SidebarContent>
-        </Sidebar>
+      <SidebarContent className="p-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-foreground">Chat History</h2>
+          <SidebarTrigger />
+        </div>
+
+        <NewChatButton />
+
+        <div className="space-y-2">
+          {threads.map((thread) => (
+            <ChatSessionBox key={thread.id} thread={thread} />
+          ))}
+        </div>
+      </SidebarContent>
+    </Sidebar>
   )
 }
 

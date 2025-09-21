@@ -34,7 +34,7 @@ const ChatMessageSection: React.FC<ChatMessageSectionProps> = ({ messages, isTyp
                                 }`}>
                                 <p className="text-sm leading-relaxed">{message.content}</p>
                                 <p className="text-xs opacity-70 mt-2">
-                                    {message.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(message.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                             </div>
                         </div>

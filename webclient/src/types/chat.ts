@@ -1,12 +1,29 @@
-export interface ChatMessage {
-  id: string;
-  content: string;
-  sender: 'user' | 'assistant';
-  timestamp: Date;
+export enum Sender {
+  USER = 'user',
+  ASSISTANT = 'assistant',
 }
 
-export interface ChatSession {
+export interface ChatMessage {
+  id: string;
+  threadId: string;
+  content: string;
+  sender: Sender;
+  createdAt: string;
+}
+
+export interface ChatThread {
   id: string;
   title: string;
-  lastMessage: Date;
+  userId: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ChatSummary {
+  id: string;
+  threadId: string;
+  content: string;
+  lastMessageId: string;
+  createdAt: string;
+  updatedAt?: string;
 }

@@ -1,7 +1,7 @@
 import json
 import traceback
 from uuid import uuid4
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel
 from fastapi import WebSocket, APIRouter, Depends, Request
@@ -12,6 +12,11 @@ from app.config.logger_config import setup_logger
 from app.workflows.chat_workflow import get_chat_workflow, ChatWorkflowState
 from app.utils.chat_utils import convert_to_langchain_messages
 from app.constants.chat import WORKFLOW_CHAT_MESSAGES_LIMIT
+from app.model.response.chat import (
+    CreateThreadResponse,
+    GetThreadResponse,
+    MessageResponse,
+)
 
 chat_router = APIRouter()
 log = setup_logger(__name__)
@@ -54,11 +59,11 @@ async def chat_websocket(
                     limit=WORKFLOW_CHAT_MESSAGES_LIMIT
                 )
                 previous_messages = list(reversed(previous_messages))
-                
+
                 langchain_messages = convert_to_langchain_messages(
                     previous_messages
                 )
-                
+
                 db_summary = await chat_service.get_thread_summary(chat_request.thread_id)
 
                 chat_workflow_input = ChatWorkflowState(
@@ -81,8 +86,8 @@ async def chat_websocket(
                         "thread_id": chat_request.thread_id}},
                     stream_mode="messages",
                 ):
-                    if (hasattr(ai_response, "content") and ai_response.content and 
-                        meta_data.get("langgraph_node") == "assistant"):
+                    if (hasattr(ai_response, "content") and ai_response.content and
+                            meta_data.get("langgraph_node") == "assistant"):
                         new_content = ai_response.content
                         existing_message += new_content
 
@@ -124,12 +129,13 @@ async def chat_websocket(
                         content=existing_message,
                         sender="assistant",
                     )
-                
+
                 # Save summary when updated
-                final_state = workflow.get_state(config={"configurable": {"thread_id": chat_request.thread_id}})
-                if (final_state and 
+                final_state = workflow.get_state(
+                    config={"configurable": {"thread_id": chat_request.thread_id}})
+                if (final_state and
                     final_state.values.get("summary_updated") and
-                    final_state.values.get("summary")):
+                        final_state.values.get("summary")):
 
                     if last_saved_message:
                         await chat_service.save_summary(
@@ -156,29 +162,29 @@ async def chat_websocket(
         log.info(f"WebSocket connection closed for user {userId}")
 
 
-@chat_router.get("/threads")
-async def list_chat_threads(chat_service: ChatService = Depends(get_chat_service)):
-    threads = await chat_service.list_chat_threads()
-    return threads
+@chat_router.get("/threads", response_model=List[GetThreadResponse])
+async def list_chat_threads(request: Request, chat_service: ChatService = Depends(get_chat_service)):
+    threads = await chat_service.list_chat_threads(user_id=request.state.user_id)
+    return [GetThreadResponse.model_validate(thread.model_dump()) for thread in threads]
 
 
-@chat_router.get("/threads/{thread_id}")
+@chat_router.get("/threads/{thread_id}", response_model=GetThreadResponse)
 async def get_chat_thread(
     request: Request, thread_id: str, chat_service: ChatService = Depends(get_chat_service)
 ):
     thread = await chat_service.get_chat_thread(thread_id, user_id=request.state.user_id)
-    return thread
+    return GetThreadResponse.model_validate(thread.model_dump())
 
 
-@chat_router.post("/threads")
-async def create_chat_thread(request: Request, chat_service: ChatService = Depends(get_chat_service)):
-    new_thread = await chat_service.create_chat_thread(user_id=request.state.user_id, title="New Chat")
-    return new_thread
+@chat_router.post("/threads", response_model=CreateThreadResponse)
+async def create_chat_thread(request: Request, title: str, chat_service: ChatService = Depends(get_chat_service)):
+    new_thread = await chat_service.create_chat_thread(user_id=request.state.user_id, title=title)
+    return CreateThreadResponse.model_validate(new_thread.model_dump())
 
 
-@chat_router.get("/threads/{thread_id}/messages")
+@chat_router.get("/threads/{thread_id}/messages", response_model=List[MessageResponse])
 async def get_chat_messages(
     thread_id: str, chat_service: ChatService = Depends(get_chat_service)
 ):
     messages = await chat_service.get_chat_messages(thread_id)
-    return messages
+    return [MessageResponse.model_validate(message.model_dump()) for message in messages]
