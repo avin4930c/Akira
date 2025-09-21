@@ -6,6 +6,7 @@ from app.clients.llm_clients.gemini_llm_client import get_gemini_llm_client
 from app.prompts.motorcycle_assistant_prompt import MOTORCYCLE_ASSISTANT_PROMPT
 from app.prompts.summarization_prompt import SUMMARIZATION_PROMPT
 from app.utils.chat_utils import convert_chat_history_to_string
+from app.constants.chat import INITIAL_SUMMARY_CHAT__MESSAGES_LIMIT
 
 class ChatWorkflowState(MessagesState):
     query: str = None
@@ -42,7 +43,7 @@ class ChatWorkflow:
                 yield {"messages": [chunk]}
                 
     async def should_summarize(self, state: ChatWorkflowState):
-        if state["db_message_count"] < 5:
+        if state["db_message_count"] < INITIAL_SUMMARY_CHAT__MESSAGES_LIMIT:
             return END
         
         message_ids = [msg.id for msg in state["messages"]]

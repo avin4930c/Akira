@@ -14,7 +14,7 @@ engine = create_engine(
 
 def init_db() -> None:
     try:
-        logger.info(f"Creating database tables with URL: {settings.DATABASE_URL}")
+        logger.info(f"Creating database tables with name: {settings.DATABASE_URL.split('/')[-1]}")
         SQLModel.metadata.create_all(engine)
         logger.info("Database tables created successfully")
     except Exception as e:
