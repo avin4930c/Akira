@@ -11,7 +11,7 @@ from app.core.websocket_connection_manager import webSocketConnectionManager
 from app.config.logger_config import setup_logger
 from app.workflows.chat_workflow import get_chat_workflow, ChatWorkflowState
 from app.utils.chat_utils import convert_to_langchain_messages
-from app.constants.chat import SUMMARY_CHAT_MESSAGES_LIMIT
+from app.constants.chat import WORKFLOW_CHAT_MESSAGES_LIMIT
 
 chat_router = APIRouter()
 log = setup_logger(__name__)
@@ -51,7 +51,7 @@ async def chat_websocket(
 
                 previous_messages = await chat_service.get_chat_messages(
                     chat_request.thread_id,
-                    limit=SUMMARY_CHAT_MESSAGES_LIMIT
+                    limit=WORKFLOW_CHAT_MESSAGES_LIMIT
                 )
                 previous_messages = list(reversed(previous_messages))
                 
