@@ -32,7 +32,4 @@ class MessageResponse(BaseModel):
     content: str
     sender: str
     created_at: datetime
-    content: str
-    sender: str  # "user" | "assistant" | "system"
-    created_at: datetime
     message_order: Optional[int] = None

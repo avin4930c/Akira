@@ -19,19 +19,21 @@ def convert_to_langchain_messages(
         elif sender == "assistant":
             langchain_messages.append(AIMessage(content=content, id=msg_id))
         elif sender == "system":
-            langchain_messages.append(SystemMessage(content=content, id=msg_id))
+            langchain_messages.append(
+                SystemMessage(content=content, id=msg_id))
         else:
             langchain_messages.append(HumanMessage(content=content, id=msg_id))
 
     return langchain_messages
 
+
 def convert_chat_history_to_string(message_history: List[Any]) -> str:
     chat_history_str = ""
     for msg in message_history:
-            if hasattr(msg, "content"):
-                role = (
-                    "Human" if msg.__class__.__name__ == "HumanMessage" else "Assistant"
-                )
-                chat_history_str += f"{role}: {msg.content}\n"
-                
+        if hasattr(msg, "content"):
+            role = (
+                "Human" if msg.__class__.__name__ == "HumanMessage" else "Assistant"
+            )
+            chat_history_str += f"{role}: {msg.content}\n"
+
     return chat_history_str
