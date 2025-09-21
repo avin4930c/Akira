@@ -29,9 +29,14 @@ Capabilities:
 """,
         ),
         # Context block
-        ("system", "Additional Context (if any, from RAG or tools):\n{context}\n"),
-        # History block
-        ("system", "Conversation history so far:\n{chat_history}\n"),
+        ("system",
+         "Additional Context (if any, from RAG or tools):\n{context}\n"),
+        # Summary block for longer conversation context
+        ("system",
+         "Previous conversation summary (if available):\n{summary}\n"),
+        # History block for recent messages
+        ("system",
+         "Recent conversation history (last 15 messages):\n{chat_history}\n"),
         # Human query
         ("human", "{query}"),
     ]

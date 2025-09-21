@@ -1,98 +1,119 @@
+from fastapi import Depends
 from uuid import uuid4
 from datetime import datetime
-from typing import List, Dict, Any
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from typing import List, Optional
+from sqlmodel import Session, select
+from app.model.sql_models.chat import ChatThread, ChatMessage, ChatSummary
+from app.core.database import get_session
 
 
 class ChatService:
-    def __init__(self):
-        pass
+    def __init__(self, session: Session):
+        self.session = session
 
-    async def create_chat_session(self, user_query: str):
-        random_uuid = str(uuid4())
-        created_time = datetime.now().isoformat()
-        truncated_user_query = (
-            (user_query[:20] + "...") if len(user_query) > 20 else user_query
+    async def create_chat_thread(self, user_id: str, title: str) -> ChatThread:
+        thread = ChatThread(
+            user_id=user_id,
+            title=title,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
         )
-        session = {
-            "sessionId": random_uuid,
-            "title": truncated_user_query,
-            "createdAt": created_time,
-        }
-        return session
 
-    async def get_chat_session(self, session_id: str):  # TODO: Replace with real data
-        mock_session = {
-            "sessionId": session_id,
-            "title": f"Session {session_id}",
-            "createdAt": datetime.now().isoformat(),
-        }
-        return mock_session
+        self.session.add(thread)
+        self.session.commit()
+        self.session.refresh(thread)
 
-    async def list_chat_sessions(self):  # TODO: Replace with real data
-        mock_sessions = [
-            {
-                "sessionId": str(uuid4()),
-                "title": "Session 1",
-                "createdAt": datetime.now().isoformat(),
-            },
-            {
-                "sessionId": str(uuid4()),
-                "title": "Session 2",
-                "createdAt": datetime.now().isoformat(),
-            },
-        ]
-        return mock_sessions
+        return thread
 
-    async def get_chat_messages(self, session_id: str) -> List[Dict[str, Any]]:
-        """Get messages for a session in LangChain-compatible format"""
-        # TODO: Replace with real database query
-        # For now, return mock messages
-        mock_messages = [
-            {
-                "messageId": str(uuid4()),
-                "content": "Hello, how can I help you?",
-                "sender": "assistant",
-                "createdAt": datetime.now().isoformat(),
-            }
-        ]
-        return mock_messages
+    async def get_chat_thread(self, thread_id: str, user_id: str) -> Optional[ChatThread]:
+        statement = select(ChatThread).where(
+            ChatThread.id == thread_id,
+            ChatThread.user_id == user_id
+        )
+        return self.session.exec(statement).first()
 
-    def convert_to_langchain_messages(
-        self, messages: List[Dict[str, Any]]
-    ) -> List[Any]:
-        """Convert database messages to LangChain message format"""
-        langchain_messages = []
+    async def list_chat_threads(self, user_id: str) -> List[ChatThread]:
+        statement = select(ChatThread).where(
+            ChatThread.user_id == user_id
+            # TODO: Consider last updated time instead
+        ).order_by(ChatThread.created_at.desc())
+        return list(self.session.exec(statement).all())
 
-        for msg in messages:
-            content = msg.get("content", "")
-            sender = msg.get("sender", "user")
+    async def delete_chat_thread(self, thread_id: str, user_id: str) -> bool:
+        # TODO: First verify ownership
+        thread = await self.get_chat_thread(thread_id, user_id)
+        if not thread:
+            return False
 
-            if sender == "user":
-                langchain_messages.append(HumanMessage(content=content))
-            elif sender == "assistant":
-                langchain_messages.append(AIMessage(content=content))
-            elif sender == "system":
-                langchain_messages.append(SystemMessage(content=content))
-            else:
-                # Default to human message if sender is unknown
-                langchain_messages.append(HumanMessage(content=content))
+        message_statement = select(ChatMessage).where(
+            ChatMessage.thread_id == thread_id)
+        messages = self.session.exec(message_statement).all()
+        for message in messages:
+            self.session.delete(message)
 
-        return langchain_messages
+        summary_statement = select(ChatSummary).where(
+            ChatSummary.thread_id == thread_id)
+        summaries = self.session.exec(summary_statement).all()
+        for summary in summaries:
+            self.session.delete(summary)
 
-    async def save_message(self, thread_id: str, content: str, sender: str):
-        """Save a message to the database"""
-        # TODO: Implement actual database save
-        message = {
-            "messageId": str(uuid4()),
-            "thread_id": thread_id,
-            "content": content,
-            "sender": sender,
-            "createdAt": datetime.now().isoformat(),
-        }
+        self.session.delete(thread)
+        self.session.commit()
+        return True
+
+    async def get_chat_messages(self, thread_id: str, limit: Optional[int] = None) -> List[ChatMessage]:
+        statement = select(ChatMessage).where(
+            ChatMessage.thread_id == thread_id
+        ).order_by(ChatMessage.created_at.desc())
+
+        if limit:
+            statement = statement.limit(limit)
+
+        return list(self.session.exec(statement).all())
+
+    async def save_message(self, thread_id: str, content: str, sender: str) -> ChatMessage:
+        message = ChatMessage(
+            thread_id=thread_id,
+            content=content,
+            sender=sender,
+            created_at=datetime.utcnow()
+        )
+
+        # TODO: Update the thread's updated_at timestamp
+        self.session.add(message)
+        self.session.commit()
+        self.session.refresh(message)
         return message
 
+    async def get_thread_summary(self, thread_id: str) -> Optional[ChatSummary]:
+        statement = select(ChatSummary).where(
+            ChatSummary.thread_id == thread_id
+        ).order_by(ChatSummary.created_at.desc()).limit(1)
+        return self.session.exec(statement).first()
 
-def get_chat_service() -> ChatService:
-    chat_service = ChatService()
-    return chat_service
+    async def save_summary(self, thread_id: str, summary_content: str, last_message_id: str) -> ChatSummary:
+        existing_summary = await self.get_thread_summary(thread_id)
+
+        if existing_summary:
+            existing_summary.content = summary_content
+            existing_summary.last_message_id = last_message_id
+            existing_summary.updated_at = datetime.utcnow()
+            self.session.add(existing_summary)
+            summary = existing_summary
+        else:
+            summary = ChatSummary(
+                thread_id=thread_id,
+                content=summary_content,
+                last_message_id=last_message_id,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+            self.session.add(summary)
+
+        self.session.commit()
+        self.session.refresh(summary)
+        return summary
+
+
+def get_chat_service(db: Session = Depends(get_session)) -> ChatService:
+    return ChatService(session=db)
