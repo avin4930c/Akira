@@ -31,7 +31,6 @@ export const setupInterceptors = (getToken: () => Promise<string | null>) => {
       if (error.response?.status === 401 && error.config) {
         try {
           const refreshedToken = await getToken();
-          console.log("refreshedToken: %o", refreshedToken);
 
           if (refreshedToken) {
             error.config.headers['Authorization'] = `Bearer ${refreshedToken}`;

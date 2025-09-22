@@ -2,15 +2,18 @@
 
 import { useRouter } from 'next/navigation';
 import ChatWelcome from '@/components/chat/ChatWelcome';
+import { useCreateThreadMutation } from '@/hooks/chat/useChat';
 
 export default function ChatHomePage() {
   const router = useRouter();
+  const createThreadMutation = useCreateThreadMutation();
 
-  const handleStartChat = async (message: string) => {
-    //TODO: Make this an api call for creating new session
-    const newChatId = Date.now().toString();
-    
-    router.push(`/chat/${newChatId}?message=${encodeURIComponent(message)}`);
+  const title = "Akira New Chat"
+
+  const handleStartChat = async () => {
+    const newThread = await createThreadMutation.mutateAsync(title);
+    const newThreadId = newThread.id;
+    router.push(`/chat/${newThreadId}`);
   };
 
   return <ChatWelcome onStartChat={handleStartChat} />;
