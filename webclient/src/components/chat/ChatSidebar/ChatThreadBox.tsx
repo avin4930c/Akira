@@ -29,7 +29,7 @@ const ChatThreadBox: React.FC<ChatThreadBoxProps> = ({ thread }) => {
                 </div>
                 <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                     <Clock className="w-3 h-3" />
-                    <span>{thread.updatedAt ? new Date(thread?.updatedAt).toLocaleString('en-US') : "Last updated unknown"}</span>
+                    <span>{thread.updatedAt ? new Date(thread.updatedAt).toLocaleString('en-US') : "Last updated unknown"}</span>
                 </div>
             </div>
         </Link>
