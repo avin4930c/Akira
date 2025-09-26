@@ -1,25 +1,30 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { Send } from 'lucide-react'
 
 interface ChatInputProps {
-    inputValue: string;
-    setInputValue: (value: string) => void;
-    handleSendMessage: () => void;
+    onSendMessage: (message: string) => void;
     isTyping: boolean;
     placeholder?: string;
     disabled?: boolean;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
-    inputValue,
-    setInputValue,
-    handleSendMessage,
+    onSendMessage,
     isTyping,
     placeholder = "Ask me anything about motorcycles...",
     disabled = false,
 }) => {
+    const [inputValue, setInputValue] = useState('');
+
+    const handleSend = () => {
+        const trimmedMessage = inputValue.trim();
+        if (trimmedMessage) {
+            onSendMessage(trimmedMessage);
+            setInputValue('');
+        }
+    };
     return (
         <div className="p-6 border-t border-border/50 bg-background/80 backdrop-blur-sm">
             <div className="max-w-4xl mx-auto">
@@ -31,10 +36,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
                             placeholder={placeholder}
                             className="pr-12 py-3 text-sm resize-none bg-muted/30 border-border/50 focus:border-accent/50 rounded-xl"
                             disabled={isTyping || disabled}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey && inputValue.trim()) {
+                                    e.preventDefault();
+                                    handleSend();
+                                }
+                            }}
                         />
                     </div>
                     <Button
-                        onClick={handleSendMessage}
+                        onClick={handleSend}
                         disabled={!inputValue.trim() || isTyping || disabled}
                         variant="hero"
                         size="icon"

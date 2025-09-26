@@ -11,34 +11,26 @@ interface ChatSidebarProps {
 }
 
 const ChatSidebar: React.FC<ChatSidebarProps> = ({ threads, loading, error }) => {
-  if (loading) {
-    return (
-      <div className="md:w-[320px] border-r border-border/50 p-4">
-        <p className="text-sm text-muted-foreground">Loading chat threads...</p>
-      </div>
-    );
-  }
+  const renderContent = () => {
+    if (loading) {
+      return <p className="mt-20 text-sm text-muted-foreground">Loading chat threads...</p>;
+    }
 
-  if (error) {
-    return (
-      <div className="md:w-[320px] border-r border-border/50 p-4">
-        <p className="text-sm text-red-500">Error loading chat threads</p>
-      </div>
-    );
-  }
+    if (error) {
+      return <p className="mt-20 text-sm text-red-500">Error loading chat threads</p>;
+    }
 
-  if (!threads || threads.length === 0) {
-    return (
-      <div className="md:w-[320px] border-r border-border/50 p-4">
-        <p className="text-sm text-muted-foreground">No chat threads available. Start a new chat!</p>
-        <NewChatButton />
-      </div>
-    );
-  }
+    if (!threads || threads.length === 0) {
+      return (
+        <>
+          <p className="mt-20 text-sm text-muted-foreground">No chat threads available. Start a new chat!</p>
+          <NewChatButton />
+        </>
+      );
+    }
 
-  return (
-    <Sidebar className="md:w-[320px] border-r border-border/50">
-      <SidebarContent className="p-4">
+    return (
+      <>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-foreground">Chat History</h2>
           <SidebarTrigger />
@@ -51,9 +43,17 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ threads, loading, error }) =>
             <ChatSessionBox key={thread.id} thread={thread} />
           ))}
         </div>
+      </>
+    );
+  };
+
+  return (
+    <Sidebar className="md:w-[320px] border-r border-border/50">
+      <SidebarContent className="p-4">
+        {renderContent()}
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }
 
 export default ChatSidebar

@@ -51,10 +51,6 @@ export default function WelcomeInput({
           <Send className="w-4 h-4" />
         </Button>
       </div>
-      
-      <p className="text-sm text-muted-foreground">
-        Press Enter to send
-      </p>
     </div>
   );
 }

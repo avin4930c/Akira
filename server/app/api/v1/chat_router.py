@@ -58,7 +58,6 @@ async def chat_websocket(
                     chat_request.thread_id,
                     limit=WORKFLOW_CHAT_MESSAGES_LIMIT
                 )
-                previous_messages = list(reversed(previous_messages))
 
                 langchain_messages = convert_to_langchain_messages(
                     previous_messages

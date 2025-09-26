@@ -64,7 +64,7 @@ class ChatService:
     async def get_chat_messages(self, thread_id: str, limit: Optional[int] = None) -> List[ChatMessage]:
         statement = select(ChatMessage).where(
             ChatMessage.thread_id == thread_id
-        ).order_by(ChatMessage.created_at.desc())
+        ).order_by(ChatMessage.created_at.asc())
 
         if limit:
             statement = statement.limit(limit)
