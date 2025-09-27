@@ -30,7 +30,7 @@ export const useCreateThreadMutation = () => {
 }
 
 export function useThreadMessages(threadId: string) {
-    const {data, error, isLoading} = useQuery({
+    const { data, error, isLoading } = useQuery({
         queryKey: chatKeys.messages(threadId),
         queryFn: () => getThreadMessages(threadId),
         refetchOnWindowFocus: false,
@@ -38,5 +38,5 @@ export function useThreadMessages(threadId: string) {
         enabled: !!threadId,
     })
 
-    return { data, error, isLoading}
+    return { data, error, isLoading }
 }

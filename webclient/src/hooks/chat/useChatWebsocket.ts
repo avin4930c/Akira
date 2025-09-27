@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { 
-  WebSocketMessage, 
+import {
+  WebSocketMessage,
   ChatRequest,
   AIResponseStreamData,
   ErrorWebSocketData
@@ -65,8 +65,19 @@ export const useChatWebSocket = ({ threadId, onStreamingMessage, onStreamingErro
         return;
       }
 
-      const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:8000/chat/ws';
-      
+      const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL;
+
+      if (!wsUrl) {
+        const errorMsg = 'WebSocket URL is not configured';
+        console.error(errorMsg);
+        setState(prev => ({
+          ...prev,
+          error: errorMsg,
+        }));
+        onConnectionError?.(errorMsg);
+        return;
+      }
+
       const ws = new WebSocket(wsUrl, [`bearer`, token]);
       websocketRef.current = ws;
 

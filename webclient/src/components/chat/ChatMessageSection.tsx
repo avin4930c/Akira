@@ -1,16 +1,16 @@
 import React from 'react'
 import { ScrollArea } from '../ui/scroll-area'
 import { ChatMessage, StreamingMessage } from '@/types/chat'
-import { MessageListItem } from './chat-message-section/MessageListItem'
-import { StreamingMessageBubble } from './chat-message-section/StreamingMessageBubble'
-import { TypingStateBubble } from './chat-message-section/TypingStateBubble'
-import { EmptyState } from './chat-message-section/EmptyState'
-import { useChatAutoScroll } from './chat-message-section/useChatAutoScroll'
+import { MessageListItem } from './ChatMessageSection/MessageListItem'
+import { StreamingMessageBubble } from './ChatMessageSection/StreamingMessageBubble'
+import { TypingStateBubble } from './ChatMessageSection/TypingStateBubble'
+import { EmptyState } from './ChatMessageSection/EmptyState'
+import { useChatAutoScroll } from './ChatMessageSection/useChatAutoScroll'
 
 interface ChatMessageSectionProps {
-    messages: ChatMessage[];
-    streamingMessage?: StreamingMessage | null;
-    isWaitingForResponse?: boolean;
+  messages: ChatMessage[];
+  streamingMessage?: StreamingMessage | null;
+  isWaitingForResponse?: boolean;
 }
 
 const ChatMessageSection: React.FC<ChatMessageSectionProps> = ({
