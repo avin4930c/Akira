@@ -27,3 +27,46 @@ export interface ChatSummary {
   createdAt: string;
   updatedAt?: string;
 }
+
+export interface StreamingMessage {
+  id: string;
+  threadId: string;
+  content: string;
+  partial: boolean;
+  timestamp: string;
+  sender: Sender;
+}
+
+export interface AIResponseStreamData {
+  id: string;
+  content: string;
+  thread_id: string;
+  partial: boolean;
+  timestamp: string;
+  sender: Sender;
+}
+
+export interface WebSocketMessage {
+  type: 'ai_response_stream' | 'error';
+  data: AIResponseStreamData | { message: string };
+}
+
+export interface MessageState {
+  messages: ChatMessage[];
+  streamingMessage: StreamingMessage | null;
+  isConnected: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface ChatRequest {
+  message: string;
+  thread_id: string;
+  metadata?: Record<string, string | number | boolean>;
+}
+
+export interface ErrorWebSocketData {
+  message: string;
+}
+
+export type WebSocketData = AIResponseStreamData | ErrorWebSocketData;

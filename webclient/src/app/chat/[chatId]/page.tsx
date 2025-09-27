@@ -1,63 +1,150 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { ChatMessage, Sender } from '@/types/chat';
-import ChatMessageSection from '@/components/chat/ChatMessageSection';
-import ChatInput from '@/components/chat/ChatInput';
-import ChatHeader from '@/components/chat/ChatHeader';
+import { useParams } from 'next/navigation';
+import { useCallback, useEffect, useState, useRef } from 'react';
+import { useChatWebSocket } from '@/hooks/chat/useChatWebsocket';
+import { useThreadMessages } from '@/hooks/chat/useChat';
+import { ChatMessage, StreamingMessage, Sender, AIResponseStreamData, ErrorWebSocketData } from '@/types/chat';
+import ChatInterface from '@/components/screens/chat/ChatInterface';
 
 export default function ChatPage() {
-  const searchParams = useSearchParams();
-  const initialMessage = searchParams.get('message');
-
+  const { chatId } = useParams<{ chatId: string }>();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [streamingMessage, setStreamingMessage] = useState<StreamingMessage | null>(null);
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
 
-  const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const accumulatedContentRef = useRef<string>('');
+  const currentStreamingIdRef = useRef<string | null>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const {
+    data: initialMessages,
+    isLoading: isLoadingMessages,
+    error: messagesError
+  } = useThreadMessages(chatId);
+
+  const handleStreamingMessage = useCallback((data: AIResponseStreamData) => {
+    setIsWaitingForResponse(false);
+
+    if (currentStreamingIdRef.current !== data.id) {
+      accumulatedContentRef.current = '';
+      currentStreamingIdRef.current = data.id;
+    }
+
+    accumulatedContentRef.current += data.content;
+
+    if (data.partial) {
+      const streamingMsg: StreamingMessage = {
+        id: data.id,
+        threadId: data.thread_id,
+        content: accumulatedContentRef.current,
+        partial: true,
+        timestamp: data.timestamp,
+        sender: data.sender as Sender,
+      };
+
+      setStreamingMessage(streamingMsg);
+    } else {
+      const finalMessage: ChatMessage = {
+        id: data.id,
+        threadId: data.thread_id,
+        content: accumulatedContentRef.current,
+        sender: data.sender as Sender,
+        createdAt: data.timestamp,
+      };
+
+      setStreamingMessage(null);
+      setMessages(prev => [...prev, finalMessage]);
+
+      accumulatedContentRef.current = '';
+      currentStreamingIdRef.current = null;
+    }
+  }, []);
+
+  const handleStreamingError = useCallback((data: ErrorWebSocketData) => {
+    console.error('WebSocket streaming error:', data.message);
+    setIsWaitingForResponse(false);
+
+    // If we have accumulated content, save it as incomplete message
+    if (accumulatedContentRef.current && currentStreamingIdRef.current) {
+      const incompleteMessage: ChatMessage = {
+        id: currentStreamingIdRef.current,
+        threadId: chatId,
+        content: `${accumulatedContentRef.current}\n\n⚠️ *Response was interrupted due to an error*`,
+        sender: Sender.ASSISTANT,
+        createdAt: new Date().toISOString(),
+      };
+
+      setMessages(prev => [...prev, incompleteMessage]);
+    }
+
+    setStreamingMessage(null);
+    accumulatedContentRef.current = '';
+    currentStreamingIdRef.current = null;
+  }, [chatId]);
+
+  const handleConnectionError = useCallback((error: string) => {
+    console.error('WebSocket connection error:', error);
+  }, []);
+
+  const {
+    isConnected,
+    isStreaming,
+    error: wsError,
+    sendMessage,
+    retry,
+  } = useChatWebSocket({
+    threadId: chatId,
+    onStreamingMessage: handleStreamingMessage,
+    onStreamingError: handleStreamingError,
+    onConnectionError: handleConnectionError,
+  });
+
+  const handleSendMessage = useCallback((message: string) => {
+    if (message && isConnected) {
+      const userMessage: ChatMessage = {
+        id: `temp-${Date.now()}`,
+        threadId: chatId,
+        content: message,
+        sender: Sender.USER,
+        createdAt: new Date().toISOString(),
+      };
+
+      setMessages(prev => [...prev, userMessage]);
+      setIsWaitingForResponse(true);
+      sendMessage(message);
+    }
+  }, [isConnected, sendMessage, chatId]);
+
+
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (initialMessages && messages.length === 0) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages, messages.length]);
 
-  // const handleSendMessage = async () => {
-  //   if (!inputValue.trim()) return;
-
-  //   const userMessage: ChatMessage = {
-  //     id: Date.now().toString(),
-  //     content: inputValue,
-  //     sender: 'user',
-  //     timestamp: new Date(),
-  //   };
-
-  //   setMessages((prev) => [...prev, userMessage]);
-  //   setInputValue('');
-  //   setIsTyping(true);
-
-  //   // Simulate AI response
-  //   setTimeout(() => {
-  //     const assistantMessage: ChatMessage = {
-  //       id: (Date.now() + 1).toString(),
-  //       content: "That's a great question about motorcycles! I'd be happy to help you with that. However, this is currently a demo interface. In the full version, I would provide detailed, accurate information about motorcycle maintenance, troubleshooting, and riding techniques based on your specific question.",
-  //       sender: 'assistant',
-  //       timestamp: new Date(),
-  //     };
-  //     setMessages((prev) => [...prev, assistantMessage]);
-  //     setIsTyping(false);
-  //   }, 2000);
-  // };
+  if (!chatId) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <p className="text-lg text-red-500 mb-2">Invalid Chat ID</p>
+          <p className="text-sm text-muted-foreground">Please select a valid chat from the sidebar.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <ChatHeader />
-      <ChatMessageSection messages={messages} isTyping={isTyping} messagesEndRef={messagesEndRef} />
-      <ChatInput inputValue={inputValue} setInputValue={setInputValue} handleSendMessage={() => { }} isTyping={isTyping} />
-    </>
+    <ChatInterface
+      messages={messages}
+      streamingMessage={streamingMessage}
+      isConnected={isConnected}
+      isLoading={isLoadingMessages || isStreaming}
+      isWaitingForResponse={isWaitingForResponse}
+      error={wsError || messagesError?.message}
+      onSendMessage={handleSendMessage}
+      onRetry={retry}
+    />
   );
 }

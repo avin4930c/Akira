@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { chatKeys } from "./chat-keys";
-import { createThread, getUserChatThreads } from "@/actions/chat";
+import { createThread, getThreadMessages, getUserChatThreads } from "@/actions/chat";
 
 export function useChatThreads() {
     const { data, error, isLoading } = useQuery({
@@ -27,4 +27,16 @@ export const useCreateThreadMutation = () => {
             throw error;
         }
     });
+}
+
+export function useThreadMessages(threadId: string) {
+    const { data, error, isLoading } = useQuery({
+        queryKey: chatKeys.messages(threadId),
+        queryFn: () => getThreadMessages(threadId),
+        refetchOnWindowFocus: false,
+        staleTime: 10 * 60 * 1000, // 10 minutes
+        enabled: !!threadId,
+    })
+
+    return { data, error, isLoading }
 }
