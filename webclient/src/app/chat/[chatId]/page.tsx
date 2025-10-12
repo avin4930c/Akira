@@ -6,6 +6,8 @@ import { useChatWebSocket } from '@/hooks/chat/useChatWebsocket';
 import { useThreadMessages } from '@/hooks/chat/useChat';
 import { ChatMessage, StreamingMessage, Sender, AIResponseStreamData, ErrorWebSocketData } from '@/types/chat';
 import ChatInterface from '@/components/screens/chat/ChatInterface';
+import { usePendingMessageStore } from '@/stores/pendingMessageStore';
+import { toast } from 'sonner';
 
 export default function ChatPage() {
   const { chatId } = useParams<{ chatId: string }>();
@@ -15,6 +17,7 @@ export default function ChatPage() {
 
   const accumulatedContentRef = useRef<string>('');
   const currentStreamingIdRef = useRef<string | null>(null);
+  const { consumePendingMessage, hasPendingMessage, clearOldMessages } = usePendingMessageStore();
 
 
   const {
@@ -113,10 +116,31 @@ export default function ChatPage() {
       setMessages(prev => [...prev, userMessage]);
       setIsWaitingForResponse(true);
       sendMessage(message);
+
+      return true;
     }
   }, [isConnected, sendMessage, chatId]);
 
+  // Auto-send pending message when WebSocket connects
+  useEffect(() => {
+    const timeOutId = setTimeout(() => {
+      if (isConnected && chatId) {
+        const fetchPendingMessage = hasPendingMessage(chatId);
+        if (fetchPendingMessage) {
+          const pendingMessage = consumePendingMessage(chatId);
+          if (pendingMessage) {
+            const sentMessage = handleSendMessage(pendingMessage);
+            if (sentMessage) clearOldMessages();
+          }
+          else {
+            toast.error("Failed to send your initial message. Please enter it again.");
+          }
+        }
+      }
+    }, 100);
 
+    return () => clearTimeout(timeOutId);
+  }, [isConnected, chatId]);
 
   useEffect(() => {
     if (initialMessages && messages.length === 0) {

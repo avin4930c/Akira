@@ -112,6 +112,7 @@ async def chat_websocket(
                                 "thread_id": chat_request.thread_id,
                                 "partial": partial,
                                 "timestamp": datetime.now().isoformat(),
+                                "sender": "assistant",
                                 **meta_data,
                             },
                         }
@@ -147,7 +148,7 @@ async def chat_websocket(
                 traceback.print_exc()
                 error_message = {
                     "type": "error",
-                    "content": {"message": "Error processing chat request"},
+                    "data": {"message": "Error processing chat request"},
                 }
                 await webSocketConnectionManager.send_message(
                     userId, json.dumps(error_message)

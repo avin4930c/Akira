@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { Send } from 'lucide-react'
@@ -18,13 +18,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
     const [inputValue, setInputValue] = useState('');
 
-    const handleSend = () => {
+    const handleSend = useCallback(() => {
         const trimmedMessage = inputValue.trim();
-        if (trimmedMessage) {
+        if (trimmedMessage && !isTyping && !disabled) {
             onSendMessage(trimmedMessage);
             setInputValue('');
         }
-    };
+    }, [inputValue, isTyping, disabled, onSendMessage]);
+
     return (
         <div className="p-6 border-t border-border/50 bg-background/80 backdrop-blur-sm">
             <div className="max-w-4xl mx-auto">
@@ -35,9 +36,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
                             onChange={(e) => setInputValue(e.target.value)}
                             placeholder={placeholder}
                             className="pr-12 py-3 text-sm resize-none bg-muted/30 border-border/50 focus:border-accent/50 rounded-xl"
-                            disabled={isTyping || disabled}
+                            disabled={disabled}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey && inputValue.trim()) {
+                                if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
                                     handleSend();
                                 }
