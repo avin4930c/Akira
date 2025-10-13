@@ -22,7 +22,6 @@ export const usePendingMessageStore = create<PendingMessageStore>((set, get) => 
     pendingMessages: new Map(),
 
     setPendingMessage: (threadId: string, message: string) => {
-        console.log("Setting pending message for threadId:", threadId, "message:", message); //TODO: Remove log
         set((state) => {
             const newMap = new Map(state.pendingMessages);
             newMap.set(threadId, {
