@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import ExamplePrompts from '../ExamplePrompts';
 import WelcomeHeader from './WelcomeHeader';
 import WelcomeInput from './WelcomeInput';
-import ExamplePrompts from './ExamplePrompts';
 
 interface ChatWelcomeProps {
   onStartChat: (message: string) => void;
+  isCreating?: boolean;
 }
 
-export default function ChatWelcome({ onStartChat }: ChatWelcomeProps) {
+export default function ChatWelcome({ onStartChat, isCreating = false }: ChatWelcomeProps) {
   const [inputValue, setInputValue] = useState('');
 
   const handleSelectPrompt = (prompt: string) => {
@@ -24,10 +25,11 @@ export default function ChatWelcome({ onStartChat }: ChatWelcomeProps) {
         className="max-w-2xl w-full text-center space-y-8"
       >
         <WelcomeHeader />
-        <WelcomeInput 
-          onStartChat={onStartChat} 
+        <WelcomeInput
+          onStartChat={onStartChat}
           value={inputValue}
           onChange={setInputValue}
+          isCreating={isCreating}
         />
         <ExamplePrompts onSelectPrompt={handleSelectPrompt} />
       </motion.div>

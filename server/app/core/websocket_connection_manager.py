@@ -40,8 +40,13 @@ class WebSocketConnectionManager:
     async def send_message(self, user_id: str, message: str):
         if user_id in self.active_connections:
             websocket = self.active_connections[user_id]
-            log.info(f"Sending message to {user_id}: {message}")
-            await websocket.send_text(message)
+            try:
+                log.info(f"Sending message to {user_id}: {message}")
+                await websocket.send_text(message)
+            except Exception as e:
+                log.error(f"Failed to send message to {user_id}: {e}")
+                await self.disconnect(user_id)
+                raise e
 
     def is_connected(self, user_id: str) -> bool:
         return user_id in self.active_connections

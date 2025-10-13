@@ -15,8 +15,8 @@ interface ChatInterfaceProps {
     onRetry?: () => void;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
-    messages, 
+const ChatInterface: React.FC<ChatInterfaceProps> = ({
+    messages,
     streamingMessage,
     isConnected,
     isLoading,
@@ -30,32 +30,32 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return (
         <div className="flex flex-col h-full">
             <div className="flex-shrink-0 border-b border-border/20">
-                <ChatHeader 
+                <ChatHeader
                     isConnected={isConnected}
                     error={error}
                     onRetry={onRetry}
                 />
             </div>
-            
+
             <div className="flex-1 min-h-0">
-                <ChatMessageSection 
-                    messages={messages} 
+                <ChatMessageSection
+                    messages={messages}
                     streamingMessage={streamingMessage}
                     isWaitingForResponse={isTyping}
                 />
             </div>
-            
+
             <div className="flex-shrink-0 border-t border-border/20">
-                <ChatInput 
-                    onSendMessage={onSendMessage} 
+                <ChatInput
+                    onSendMessage={onSendMessage}
                     isTyping={isTyping}
                     disabled={!isConnected}
                     placeholder={
-                        !isConnected 
-                            ? "Reconnecting to chat server..." 
-                            : isTyping 
-                            ? "AI is responding..." 
-                            : "Ask me anything about motorcycles..."
+                        !isConnected
+                            ? "Connecting to chat server..."
+                            : isTyping
+                                ? "AI is responding..."
+                                : "Ask anything about motorcycles..."
                     }
                 />
             </div>
