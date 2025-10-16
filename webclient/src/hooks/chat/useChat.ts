@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { chatKeys } from "./chat-keys";
 import { createThread, getThreadMessages, getUserChatThreads } from "@/actions/chat";
+import { useChatInvalidation } from "./useChatInvalidation";
 
 export function useChatThreads() {
     const { data, error, isLoading } = useQuery({
@@ -14,12 +15,12 @@ export function useChatThreads() {
 }
 
 export const useCreateThreadMutation = () => {
-    const queryClient = useQueryClient();
+    const { invalidateThreads } = useChatInvalidation();
 
     return useMutation({
         mutationFn: (title: string) => createThread(title),
         onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: chatKeys.threads() });
+            invalidateThreads();
             return data;
         },
         onError: (error) => {

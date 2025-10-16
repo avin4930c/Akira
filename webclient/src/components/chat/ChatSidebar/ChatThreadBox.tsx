@@ -1,3 +1,5 @@
+"use client"
+
 import { ChatThread } from '@/types/chat';
 import { Clock, MessageCircle } from 'lucide-react';
 import Link from 'next/link';

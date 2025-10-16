@@ -35,9 +35,23 @@ class ChatService:
     async def list_chat_threads(self, user_id: str) -> List[ChatThread]:
         statement = select(ChatThread).where(
             ChatThread.user_id == user_id
-            # TODO: Consider last updated time instead
-        ).order_by(ChatThread.created_at.desc())
+        ).order_by(ChatThread.updated_at.desc())
         return list(self.session.exec(statement).all())
+
+    async def update_chat_thread(self, thread_id: str, user_id: str, new_title: Optional[str] = None) -> Optional[ChatThread]:
+        thread = await self.get_chat_thread(thread_id, user_id)
+        if not thread:
+            return None
+
+        if new_title and new_title.strip():
+            thread.title = new_title
+
+        thread.updated_at = datetime.utcnow()
+
+        self.session.add(thread)
+        self.session.commit()
+        self.session.refresh(thread)
+        return thread
 
     async def delete_chat_thread(self, thread_id: str, user_id: str) -> bool:
         # TODO: First verify ownership
@@ -79,10 +93,10 @@ class ChatService:
             created_at=datetime.utcnow()
         )
 
-        # TODO: Update the thread's updated_at timestamp
         self.session.add(message)
         self.session.commit()
         self.session.refresh(message)
+        
         return message
 
     async def get_thread_summary(self, thread_id: str) -> Optional[ChatSummary]:

@@ -5,12 +5,15 @@ from app.clients.llm_clients.base_llm_client import BaseLLMClient
 from app.clients.llm_clients.gemini_llm_client import get_gemini_llm_client
 from app.prompts.motorcycle_assistant_prompt import MOTORCYCLE_ASSISTANT_PROMPT
 from app.prompts.summarization_prompt import SUMMARIZATION_PROMPT
+from app.prompts.thread_title_prompt import THREAD_TITLE_PROMPT
 from app.utils.chat_utils import convert_chat_history_to_string
-from app.constants.chat import INITIAL_SUMMARY_CHAT__MESSAGES_LIMIT
+from app.constants.chat import INITIAL_SUMMARY_CHAT__MESSAGES_LIMIT, THREAD_TITLE_UPDATE_MESSAGE_THRESHOLD, THREAD_TITLE_MAX_LENGTH
 
 class ChatWorkflowState(MessagesState):
     query: str = None
     thread_id: str = None
+    thread_title: str = None
+    thread_updated: bool = False
     last_summary_message_id: str = None
     summary: str = None
     summary_updated: bool = False
@@ -41,18 +44,57 @@ class ChatWorkflow:
         async for chunk in self.llm.astream(formatted_prompt):
             if hasattr(chunk, "content") and chunk.content:
                 yield {"messages": [chunk]}
+        
+    def _should_update_title(self, state: ChatWorkflowState):
+        if state["db_message_count"] <= THREAD_TITLE_UPDATE_MESSAGE_THRESHOLD:
+            return True
+        else:
+            return False
+    
+    async def update_title(self, state: ChatWorkflowState):
+        current_title = state.get("thread_title", "")
+        message_history = convert_chat_history_to_string(state["messages"])
+        
+        formatted_prompt = THREAD_TITLE_PROMPT.format_messages(
+            current_title=current_title,
+            conversation=message_history,
+        )
+        
+        op = self.llm.invoke(formatted_prompt)
+        new_title = op.content.strip()
+        
+        thread_title_updated = new_title != current_title and new_title != "UNSURE" and len(new_title) <= THREAD_TITLE_MAX_LENGTH
+        
+        return {
+            "thread_title": new_title if thread_title_updated else current_title,
+            "thread_updated": thread_title_updated,
+        }
                 
-    async def should_summarize(self, state: ChatWorkflowState):
+    def _should_summarize(self, state: ChatWorkflowState):
         if state["db_message_count"] < INITIAL_SUMMARY_CHAT__MESSAGES_LIMIT:
-            return END
+            return False
         
         message_ids = [msg.id for msg in state["messages"]]
         last_summary_message_id = state.get("last_summary_message_id")
         
         if not last_summary_message_id:
-            return "summarize"
+            return True
         
         if last_summary_message_id not in message_ids:
+            return True
+        else:
+            return False
+    
+    def _post_assistant_route(self, state: ChatWorkflowState):
+        if self._should_update_title(state):
+            return "update_title"
+        elif self._should_summarize(state):
+            return "summarize"
+        else:
+            return END
+    
+    def _post_title_route(self, state: ChatWorkflowState):
+        if self._should_summarize(state):
             return "summarize"
         else:
             return END
@@ -78,9 +120,26 @@ class ChatWorkflow:
         builder = StateGraph(ChatWorkflowState)
         builder.add_node("assistant", self.assistant)
         builder.add_node("summarize", self.summarize)
+        builder.add_node("update_title", self.update_title)
 
         builder.add_edge(START, "assistant")
-        builder.add_conditional_edges("assistant", self.should_summarize)
+        builder.add_conditional_edges(
+            "assistant",
+            self._post_assistant_route,
+            {
+                "update_title": "update_title",
+                "summarize": "summarize",
+                END: END,
+            },
+        )
+        builder.add_conditional_edges(
+            "update_title",
+            self._post_title_route,
+            {
+                "summarize": "summarize",
+                END: END,
+            },
+        )
         builder.add_edge("summarize", END)
 
         return builder.compile(checkpointer=MemorySaver())

@@ -3,7 +3,8 @@
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { useChatWebSocket } from '@/hooks/chat/useChatWebsocket';
-import { useThreadMessages } from '@/hooks/chat/useChat';
+import { useChatThreads, useThreadMessages } from '@/hooks/chat/useChat';
+import { useChatInvalidation } from '@/hooks/chat/useChatInvalidation';
 import { ChatMessage, StreamingMessage, Sender, AIResponseStreamData, ErrorWebSocketData } from '@/types/chat';
 import ChatInterface from '@/components/screens/chat/ChatInterface';
 import { usePendingMessageStore } from '@/stores/pendingMessageStore';
@@ -11,9 +12,12 @@ import { toast } from 'sonner';
 
 export default function ChatPage() {
   const { chatId } = useParams<{ chatId: string }>();
+  const { data: threads } = useChatThreads();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streamingMessage, setStreamingMessage] = useState<StreamingMessage | null>(null);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+
+  const { invalidateThreads } = useChatInvalidation();
 
   const accumulatedContentRef = useRef<string>('');
   const currentStreamingIdRef = useRef<string | null>(null);
@@ -62,7 +66,15 @@ export default function ChatPage() {
       accumulatedContentRef.current = '';
       currentStreamingIdRef.current = null;
     }
-  }, []);
+
+    if (threads?.[0]?.id !== chatId) {
+      invalidateThreads();
+    }
+  }, [invalidateThreads, chatId, threads]);
+
+  const handleThreadUpdate = useCallback(() => {
+    invalidateThreads();
+  }, [invalidateThreads]);
 
   const handleStreamingError = useCallback((data: ErrorWebSocketData) => {
     console.error('WebSocket streaming error:', data.message);
@@ -101,6 +113,7 @@ export default function ChatPage() {
     onStreamingMessage: handleStreamingMessage,
     onStreamingError: handleStreamingError,
     onConnectionError: handleConnectionError,
+    onThreadUpdate: handleThreadUpdate,
   });
 
   const handleSendMessage = useCallback((message: string) => {
@@ -147,6 +160,14 @@ export default function ChatPage() {
       setMessages(initialMessages);
     }
   }, [initialMessages, messages.length]);
+
+  useEffect(() => {
+    setMessages([]);
+    setStreamingMessage(null);
+    setIsWaitingForResponse(false);
+    accumulatedContentRef.current = '';
+    currentStreamingIdRef.current = null;
+  }, [chatId]);
 
   if (!chatId) {
     return (
