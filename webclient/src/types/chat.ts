@@ -16,7 +16,7 @@ export interface ChatThread {
   title: string;
   userId: string;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 export interface ChatSummary {
@@ -46,9 +46,15 @@ export interface AIResponseStreamData {
   sender: Sender;
 }
 
+export interface ThreadUpdateData {
+  thread_id: string;
+  title: string;
+  updated: string;
+}
+
 export interface WebSocketMessage {
-  type: 'ai_response_stream' | 'error';
-  data: AIResponseStreamData | { message: string };
+  type: 'ai_response_stream' | 'error' | 'thread_update';
+  data: AIResponseStreamData | { message: string } | ThreadUpdateData;
 }
 
 export interface MessageState {

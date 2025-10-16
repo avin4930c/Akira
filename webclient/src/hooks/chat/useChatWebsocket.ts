@@ -1,17 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import {
-  WebSocketMessage,
-  ChatRequest,
-  AIResponseStreamData,
-  ErrorWebSocketData
-} from '@/types/chat';
+import { AIResponseStreamData, ChatRequest, ErrorWebSocketData, ThreadUpdateData, WebSocketMessage } from '@/types/chat';
 
 interface UseChatWebSocketProps {
   threadId: string;
   onStreamingMessage: (data: AIResponseStreamData) => void;
   onStreamingError: (data: ErrorWebSocketData) => void;
   onConnectionError?: (error: string) => void;
+  onThreadUpdate?: (data: ThreadUpdateData) => void;
 }
 
 interface WebSocketState {
@@ -20,7 +16,13 @@ interface WebSocketState {
   error: string | null;
 }
 
-export const useChatWebSocket = ({ threadId, onStreamingMessage, onStreamingError, onConnectionError }: UseChatWebSocketProps) => {
+export const useChatWebSocket = ({
+  threadId,
+  onStreamingMessage,
+  onStreamingError,
+  onConnectionError,
+  onThreadUpdate
+}: UseChatWebSocketProps) => {
   const { getToken } = useAuth();
   const [state, setState] = useState<WebSocketState>({
     isConnected: false,
@@ -28,53 +30,79 @@ export const useChatWebSocket = ({ threadId, onStreamingMessage, onStreamingErro
     error: null,
   });
 
+  const threadIdRef = useRef<string>(threadId);
+  const callbacksRef = useRef({
+    onStreamingMessage,
+    onStreamingError,
+    onConnectionError,
+    onThreadUpdate
+  });
+
+  useEffect(() => {
+    threadIdRef.current = threadId;
+    callbacksRef.current = {
+      onStreamingMessage,
+      onStreamingError,
+      onConnectionError,
+      onThreadUpdate
+    };
+  }, [threadId, onStreamingMessage, onStreamingError, onConnectionError, onThreadUpdate]);
+
   const websocketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
   const isConnectingRef = useRef(false);
+  const isIntentionalDisconnectRef = useRef(false);
 
   const cleanup = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
+
+    isIntentionalDisconnectRef.current = true;
+
     if (websocketRef.current) {
-      websocketRef.current.close();
+      if (websocketRef.current.readyState === WebSocket.OPEN ||
+        websocketRef.current.readyState === WebSocket.CONNECTING) {
+        console.log(`Closing WebSocket for thread: ${threadIdRef.current}`);
+        websocketRef.current.close();
+      }
       websocketRef.current = null;
     }
+
     isConnectingRef.current = false;
   }, []);
 
   const connect = useCallback(async () => {
-    if (!threadId || isConnectingRef.current || websocketRef.current?.readyState === WebSocket.OPEN) {
+    if (!threadIdRef.current || isConnectingRef.current) {
       return;
     }
 
-    isConnectingRef.current = true;
     cleanup();
+
+    isIntentionalDisconnectRef.current = false;
+    isConnectingRef.current = true;
+
+    console.log(`Connecting WebSocket for thread: ${threadIdRef.current}`);
 
     try {
       const token = await getToken();
       if (!token) {
-        setState(prev => ({
-          ...prev,
-          error: 'Authentication required to connect to chat',
-        }));
-        onConnectionError?.('Authentication required to connect to chat');
+        const error = 'Authentication required to connect to chat';
+        setState(prev => ({ ...prev, error }));
+        callbacksRef.current.onConnectionError?.(error);
+        isConnectingRef.current = false;
         return;
       }
 
       const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL;
-
       if (!wsUrl) {
-        const errorMsg = 'WebSocket URL is not configured';
-        console.error(errorMsg);
-        setState(prev => ({
-          ...prev,
-          error: errorMsg,
-        }));
-        onConnectionError?.(errorMsg);
+        const error = 'WebSocket URL is not configured';
+        setState(prev => ({ ...prev, error }));
+        callbacksRef.current.onConnectionError?.(error);
+        isConnectingRef.current = false;
         return;
       }
 
@@ -82,9 +110,10 @@ export const useChatWebSocket = ({ threadId, onStreamingMessage, onStreamingErro
       websocketRef.current = ws;
 
       ws.onopen = () => {
-        console.log('WebSocket connected');
+        console.log(`WebSocket connected for thread: ${threadIdRef.current}`);
         reconnectAttempts.current = 0;
         isConnectingRef.current = false;
+
         setState(prev => ({
           ...prev,
           isConnected: true,
@@ -94,126 +123,142 @@ export const useChatWebSocket = ({ threadId, onStreamingMessage, onStreamingErro
 
       ws.onmessage = (event) => {
         try {
-          const wsMessage: WebSocketMessage = JSON.parse(event.data);
-          handleWebSocketMessage(wsMessage);
+          const message = JSON.parse(event.data) as WebSocketMessage;
+
+          switch (message.type) {
+            case 'ai_response_stream': {
+              const streamData = message.data as AIResponseStreamData;
+
+              if (streamData.thread_id === threadIdRef.current) {
+                setState(prev => ({ ...prev, isStreaming: true }));
+                callbacksRef.current.onStreamingMessage(streamData);
+
+                if (!streamData.partial) {
+                  setState(prev => ({ ...prev, isStreaming: false }));
+                }
+              } else {
+                console.warn(`Ignoring message for wrong thread: ${streamData.thread_id}, current: ${threadIdRef.current}`);
+              }
+              break;
+            }
+
+            case 'thread_update': {
+              const updateData = message.data as ThreadUpdateData;
+              callbacksRef.current.onThreadUpdate?.(updateData);
+              break;
+            }
+
+            case 'error': {
+              const errorData = message.data as ErrorWebSocketData;
+              console.error('WebSocket error:', errorData.message);
+              setState(prev => ({
+                ...prev,
+                isStreaming: false,
+                error: errorData.message,
+              }));
+              callbacksRef.current.onStreamingError(errorData);
+              break;
+            }
+
+            default:
+              console.warn('Unknown WebSocket message type:', message.type);
+          }
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
-          setState(prev => ({
-            ...prev,
-            error: 'Failed to parse message from server',
-          }));
+          setState(prev => ({ ...prev, error: 'Failed to process server message' }));
         }
       };
 
       ws.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason);
+        console.log(`WebSocket disconnected for thread: ${threadIdRef.current}, code: ${event.code}, reason: ${event.reason}`);
         isConnectingRef.current = false;
+
         setState(prev => ({
           ...prev,
           isConnected: false,
           isStreaming: false,
         }));
 
-        // Attempt to reconnect if not manually closed
-        if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
-          const timeout = Math.pow(2, reconnectAttempts.current) * 1000;
+        // Only attempt reconnect if not intentionally closed and within retry limits
+        if (!isIntentionalDisconnectRef.current && event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000);
+          console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1}) for thread: ${threadIdRef.current}`);
+
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttempts.current++;
             connect();
-          }, timeout);
+          }, delay);
         }
       };
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
         isConnectingRef.current = false;
-        const errorMessage = 'WebSocket connection error';
-        setState(prev => ({
-          ...prev,
-          error: errorMessage,
-        }));
-        onConnectionError?.(errorMessage);
+
+        const errorMsg = 'WebSocket connection error';
+        setState(prev => ({ ...prev, error: errorMsg }));
+        callbacksRef.current.onConnectionError?.(errorMsg);
       };
 
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
       isConnectingRef.current = false;
-      setState(prev => ({
-        ...prev,
-        error: 'Failed to connect to chat server',
-      }));
+      setState(prev => ({ ...prev, error: 'Failed to connect to chat server' }));
     }
-  }, [threadId, onConnectionError, cleanup, getToken]);
-
-  const handleWebSocketMessage = useCallback((wsMessage: WebSocketMessage) => {
-    switch (wsMessage.type) {
-      case 'ai_response_stream':
-        const streamData = wsMessage.data as AIResponseStreamData;
-        setState(prev => ({ ...prev, isStreaming: streamData.partial }));
-        onStreamingMessage(streamData);
-        break;
-      case 'error':
-        const errorData = wsMessage.data as ErrorWebSocketData;
-        const errorMsg = errorData.message || 'Unknown error occurred';
-        setState(prev => ({
-          ...prev,
-          error: errorMsg,
-          isStreaming: false,
-        }));
-        onConnectionError?.(errorMsg);
-        onStreamingError(errorData);
-        break;
-      default:
-        console.warn('Unknown WebSocket message type:', wsMessage.type);
-    }
-  }, [onStreamingMessage, onStreamingError, onConnectionError]);
+  }, [getToken, cleanup]);
 
   const sendMessage = useCallback((content: string, metadata?: Record<string, string | number | boolean>) => {
     if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) {
       const error = 'WebSocket is not connected';
       setState(prev => ({ ...prev, error }));
-      onConnectionError?.(error);
+      callbacksRef.current.onConnectionError?.(error);
       return;
     }
 
     try {
       const request: ChatRequest = {
         message: content,
-        thread_id: threadId,
+        thread_id: threadIdRef.current,
         metadata,
       };
 
+      console.log(`Sending message to thread: ${threadIdRef.current}`);
       websocketRef.current.send(JSON.stringify(request));
     } catch (error) {
       console.error('Failed to send message:', error);
       const errorMsg = 'Failed to send message';
-      setState(prev => ({
-        ...prev,
-        error: errorMsg,
-      }));
-      onConnectionError?.(errorMsg);
+      setState(prev => ({ ...prev, error: errorMsg }));
+      callbacksRef.current.onConnectionError?.(errorMsg);
     }
-  }, [threadId, onConnectionError]);
+  }, []);
 
   useEffect(() => {
-    connect();
-    return cleanup;
-  }, [connect, cleanup]);
+    // If threadId changes, we need to reconnect
+    console.log(`Thread ID changed: ${threadId}`);
 
-  const disconnect = useCallback(() => {
+    // Clean up any existing connection
     cleanup();
-    setState(prev => ({
-      ...prev,
+
+    // Reset state
+    setState({
       isConnected: false,
       isStreaming: false,
-    }));
-  }, [cleanup]);
+      error: null
+    });
+
+    // Connect with new thread ID
+    connect();
+
+    return () => {
+      cleanup();
+    };
+  }, [threadId, cleanup, connect]);
 
   return {
     ...state,
     sendMessage,
     connect,
-    disconnect,
+    disconnect: cleanup,
     retry: connect,
   };
 };

@@ -1,7 +1,7 @@
 import { Sidebar, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar'
 import { ChatThread } from '@/types/chat';
 import React from 'react'
-import ChatSessionBox from './ChatThreadBox';
+import ChatThreadBox from './ChatThreadBox';
 import NewChatButton from '../NewChatButton';
 
 interface ChatSidebarProps {
@@ -40,7 +40,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ threads, loading, error }) =>
 
         <div className="space-y-2">
           {threads.map((thread) => (
-            <ChatSessionBox key={thread.id} thread={thread} />
+            <ChatThreadBox key={thread.id} thread={thread} />
           ))}
         </div>
       </>
