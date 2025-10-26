@@ -215,15 +215,228 @@
       background-position: -200% center;
     }
   }
-}
 
+  /* MIA Dark Theme */
+  .mia-dark {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: hsl(215 28% 5%);
+    color: hsl(210 40% 98%);
 
+    /* Dark Background Colors */
+    --background: 215 28% 5%;
+    --foreground: 210 40% 98%;
 
-@layer base {
-  * {
-    @apply border-border;
+    --card: 215 25% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 215 25% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary - Cyan/Blue */
+    --primary: 189 92% 55%;
+    --primary-foreground: 215 28% 5%;
+
+    /* Secondary - Dark Grays */
+    --secondary: 215 20% 15%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted Elements */
+    --muted: 215 20% 12%;
+    --muted-foreground: 215 15% 55%;
+
+    /* Accent - Cyan */
+    --accent: 189 92% 55%;
+    --accent-foreground: 215 28% 5%;
+
+    /* Status Colors */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* UI Elements */
+    --border: 215 20% 18%;
+    --input: 215 20% 18%;
+    --ring: 189 92% 55%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 215 28% 6%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 189 92% 55%;
+    --sidebar-primary-foreground: 215 28% 5%;
+    --sidebar-accent: 215 20% 12%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 215 20% 18%;
+    --sidebar-ring: 189 92% 55%;
+
+    /* Premium gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(189 92% 55%) 0%, hsl(210 85% 60%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(22, 163, 207, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+    --gradient-ambient: radial-gradient(ellipse at top, hsl(189 92% 55% / 0.15), transparent 50%);
+    
+    /* Glass effects */
+    --glass-bg: rgba(22, 27, 34, 0.7);
+    --glass-border: rgba(22, 163, 207, 0.2);
+    
+    /* Shadows */
+    --shadow-glow: 0 0 40px hsl(189 92% 55% / 0.15);
+    --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
-  body {
-    @apply bg-background text-foreground;
+
+  /* Ambient background animation */
+  .mia-dark::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100vh;
+    background: var(--gradient-ambient);
+    pointer-events: none;
+    z-index: 0;
+    animation: ambient-float 20s ease-in-out infinite;
+  }
+
+  .mia-dark[role="dialog"]::before,
+  .mia-dark[data-radix-dialog-content]::before,
+  .mia-dark[data-radix-popover-content]::before {
+    display: none !important;
+  }
+
+  @keyframes ambient-float {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-20px) scale(1.1); }
+  }
+
+  /* Glass card effect */
+  .mia-dark .glass-card {
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: var(--shadow-card);
+  }
+
+  .mia-dark input,
+  .mia-dark textarea,
+  .mia-dark select {
+    background-color: hsl(var(--background)) !important;
+    border-color: hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .mia-dark input:focus,
+  .mia-dark textarea:focus,
+  .mia-dark select:focus,
+  .mia-dark input:focus-visible,
+  .mia-dark textarea:focus-visible,
+  .mia-dark select:focus-visible {
+    border-color: hsl(var(--ring)) !important;
+    --tw-ring-color: hsl(var(--ring)) !important;
+  }
+
+  .mia-dark input::placeholder,
+  .mia-dark textarea::placeholder {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  /* Labels in MIA */
+  .mia-dark label {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* All buttons with outline variant in MIA */
+  .mia-dark button[class*="outline"] {
+    background-color: hsl(var(--background)) !important;
+    border-color: hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .mia-dark button[class*="outline"]:hover {
+    background-color: hsl(var(--secondary)) !important;
+    border-color: hsl(var(--ring)) !important;
+  }
+
+  /* Dialog and Popover backgrounds in MIA */
+  .mia-dark [role="dialog"],
+  .mia-dark [data-radix-dialog-content],
+  .mia-dark [data-radix-popover-content] {
+    background-color: hsl(var(--card)) !important;
+    border-color: hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Dialog overlay in MIA */
+  .mia-dark [data-radix-dialog-overlay] {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+  }
+
+  /* Dialog close button in MIA */
+  .mia-dark [data-radix-dialog-content] button[aria-label="Close"] {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  .mia-dark [data-radix-dialog-content] button[aria-label="Close"]:hover {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Button styling in MIA */
+  .mia-dark button[data-slot="input"] {
+    background-color: hsl(var(--background)) !important;
+    border-color: hsl(var(--border)) !important;
+  }
+
+  .mia-dark button[data-slot="input"]:hover {
+    background-color: hsl(var(--background)) !important;
+  }
+
+  /* Command (dropdown) styling in MIA */
+  .mia-dark [cmdk-root],
+  .mia-dark [cmdk-list],
+  .mia-dark [cmdk-group] {
+    background-color: transparent !important;
+  }
+
+  .mia-dark [cmdk-input] {
+    background-color: transparent !important;
+    border-color: hsl(var(--border)) !important;
+  }
+
+  .mia-dark [cmdk-item]:hover {
+    background-color: hsl(var(--secondary)) !important;
+  }
+
+  /* Table styling in MIA */
+  .mia-dark table {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .mia-dark th {
+    color: hsl(var(--muted-foreground)) !important;
+    border-color: hsl(var(--border)) !important;
+  }
+
+  .mia-dark td {
+    border-color: hsl(var(--border)) !important;
+  }
+
+  .mia-dark tr:hover {
+    background-color: hsl(var(--secondary) / 0.5) !important;
+  }
+
+  /* Shimmer loading effect */
+  @keyframes mia-shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+
+  .mia-dark .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted) / 0.5) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 1000px 100%;
+    animation: mia-shimmer 2s infinite;
   }
 }

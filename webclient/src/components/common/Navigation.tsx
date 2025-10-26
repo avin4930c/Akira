@@ -7,12 +7,15 @@ import { useAuth, UserButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Menu, X, MessageCircle, Wrench, Moon, Sun } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const pathname = usePathname();
   const { isSignedIn } = useAuth();
+
+  const isMia = pathname?.startsWith('/mia');
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -28,13 +31,26 @@ const Navigation = () => {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <nav className="fixed top-0 w-full max-h-[70px] z-50 glass border-b border-border/50">
+    <nav className={cn(
+      "fixed top-0 w-full max-h-[70px] z-50 border-b",
+      isMia 
+        ? "glass-card border-border/50"
+        : "glass border-border/50"
+    )}>
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-accent rounded-lg flex items-center justify-center">
-              <span className="text-accent-foreground font-bold text-lg">A</span>
+            <div className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center",
+              isMia 
+                ? "bg-gradient-to-br from-primary to-blue-500"
+                : "bg-gradient-accent"
+            )}>
+              <span className={cn(
+                "font-bold text-lg",
+                isMia ? "text-white" : "text-accent-foreground"
+              )}>A</span>
             </div>
             <span className="text-xl font-bold text-foreground">Akira</span>
           </Link>
@@ -45,11 +61,14 @@ const Navigation = () => {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                className={cn(
+                  "flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200",
                   isActive(item.href)
-                    ? 'text-accent bg-accent-soft'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
+                    ? isMia
+                      ? "text-primary bg-primary/10 border border-primary/20"
+                      : "text-accent bg-accent-soft"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
               >
                 {item.icon && <item.icon className="w-4 h-4" />}
                 <span className="font-medium">{item.name}</span>
@@ -63,7 +82,7 @@ const Navigation = () => {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="w-9 h-9"
+              className={`${isMia ? 'hidden' : ''} w-9 h-9`}
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
@@ -72,7 +91,7 @@ const Navigation = () => {
                 <Button variant="hero" size="default" asChild>
                   <Link href="/chat">Akira Chat</Link>
                 </Button>
-                <UserButton afterSignOutUrl="/" />
+                <UserButton />
               </>
             ) : (
               <>
@@ -122,7 +141,7 @@ const Navigation = () => {
                     <span className="font-medium">{item.name}</span>
                   </Link>
                 ))}
-                <div className="flex items-center justify-between px-4 py-3">
+                <div className={`flex items-center justify-between px-4 py-3`}>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -141,7 +160,7 @@ const Navigation = () => {
                       </Link>
                     </Button>
                     <div className="px-4 py-2">
-                      <UserButton afterSignOutUrl="/" />
+                      <UserButton />
                     </div>
                   </>
                 ) : (
