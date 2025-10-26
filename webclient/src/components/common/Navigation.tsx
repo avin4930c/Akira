@@ -160,7 +160,7 @@ const Navigation = () => {
                       </Link>
                     </Button>
                     <div className="px-4 py-2">
-                      <UserButton afterSignOutUrl="/" />
+                      <UserButton />
                     </div>
                   </>
                 ) : (

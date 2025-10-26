@@ -16,16 +16,16 @@ interface AddCustomerDialogProps {
 export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps) {
     const { addCustomer } = useMiaStore();
     const [formData, setFormData] = useState({
-        user_id: "",
+        id: "",
         name: "",
         phone: "",
         email: "",
     });
 
-    const reset = () => setFormData({ user_id: "", name: "", phone: "", email: "" });
+    const reset = () => setFormData({ id: "", name: "", phone: "", email: "" });
 
     const handleAdd = () => {
-        if (!formData.user_id || !formData.name || !formData.phone || !formData.email) {
+        if (!formData.id || !formData.name || !formData.phone || !formData.email) {
             toast.error("All fields are required");
             return;
         }
@@ -49,8 +49,8 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                             id="user_id"
                             placeholder="USR-001"
                             className="mt-1.5"
-                            value={formData.user_id}
-                            onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+                            value={formData.id}
+                            onChange={(e) => setFormData({ ...formData, id: e.target.value })}
                         />
                     </div>
                     <div>

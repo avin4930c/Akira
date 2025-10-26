@@ -27,7 +27,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
                     <h3 className="text-xl font-bold">
                         {vehicle.make} {vehicle.model}
                     </h3>
-                    <p className="text-sm text-muted-foreground">{vehicle.year}</p>
+                    <p className="text-sm text-muted-foreground">ID: {vehicle.id}</p>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center">
                     <CarIcon className="w-6 h-6 text-primary" />

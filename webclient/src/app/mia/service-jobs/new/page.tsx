@@ -49,11 +49,13 @@ export default function NewServiceJobPage() {
     }));
 
     const handleValidate = () => {
+        const trimmedNotes = notes.trim();
+        
         if (!selectedCustomer || !selectedVehicle || !selectedMechanic) {
             toast.error("Please fill all required fields");
             return;
         }
-        if (!notes.trim() || notes.trim().length < 10) {
+        if (!trimmedNotes || trimmedNotes.length < 10) {
             setShowWarning(true);
             return;
         }

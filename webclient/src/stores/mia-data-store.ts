@@ -81,7 +81,7 @@ const initialMechanics: Mechanic[] = [
 const initialServiceJobs: ServiceJob[] = [
   {
     id: "1",
-    customer_id: "1",
+    customer_id: "USR-001",
     vehicle_id: "1",
     mechanic_id: "1",
     status: ServiceJobStatus.Validated,
