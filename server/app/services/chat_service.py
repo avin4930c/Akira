@@ -1,5 +1,4 @@
 from fastapi import Depends
-from uuid import uuid4
 from datetime import datetime
 from typing import List, Optional
 from sqlmodel import Session, select

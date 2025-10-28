@@ -3,7 +3,7 @@ from uuid import uuid4, UUID
 from typing import Optional, List
 from datetime import datetime
 from pydantic import ValidationError
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, WebSocket, status
+from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, status
 from langgraph.graph.state import CompiledStateGraph
 from app.services.chat_service import get_chat_service, ChatService
 from app.core.websocket_connection_manager import webSocketConnectionManager
