@@ -73,9 +73,9 @@ const initialVehicles: Vehicle[] = [
 ];
 
 const initialMechanics: Mechanic[] = [
-  { id: "1", user_id: "USR-M001", name: "Mike Smith", mechanic_code: "MCH-001" },
-  { id: "2", user_id: "USR-M002", name: "Tom Johnson", mechanic_code: "MCH-002" },
-  { id: "3", user_id: "USR-M003", name: "Anna Williams", mechanic_code: "MCH-003" },
+  { id: "1", name: "Mike Smith", mechanic_code: "MCH-001" },
+  { id: "2", name: "Tom Johnson", mechanic_code: "MCH-002" },
+  { id: "3", name: "Anna Williams", mechanic_code: "MCH-003" },
 ];
 
 const initialServiceJobs: ServiceJob[] = [

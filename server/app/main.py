@@ -4,6 +4,8 @@ from app.settings.settings import settings
 from app.core.lifespan import lifespan
 from app.middleware.logging import logging_middleware
 from app.api.v1.chat_router import chat_router
+from app.api.v1.customer_router import customer_router
+from app.api.v1.vehicle_router import vehicle_router
 from app.middleware.clerk_auth_middleware import ClerkAuthenticationMiddleware
 from app.utils.langsmith_utils import apply_langsmith_env
 
@@ -23,7 +25,9 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-app.include_router(chat_router, prefix="/chat")
+app.include_router(chat_router, prefix="/chat", tags=["chat"])
+app.include_router(customer_router, prefix="/customer", tags=["customer"])
+app.include_router(vehicle_router, prefix="/vehicle", tags=["vehicle"])
 
 
 @app.get("/")

@@ -1,4 +1,4 @@
-export enum ServiceJobStatus {
+export enum ServiceJobStatus { 
   Pending = "pending",
   InProgress = "in-progress",
   Completed = "completed",
@@ -10,6 +10,7 @@ export interface Customer {
   name: string;
   phone: string;
   email: string;
+  vehicle_count?: number;
   created_at: string;
 }
 
@@ -27,7 +28,6 @@ export interface Vehicle {
 
 export interface Mechanic {
   id: string;
-  user_id: string;
   name: string;
   mechanic_code: string;
 }

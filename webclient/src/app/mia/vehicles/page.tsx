@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Car as CarIcon } from "lucide-react";
 import EmptyState from "@/components/mia/common/EmptyState";
@@ -12,7 +12,7 @@ import { SelectCustomerCard } from "@/components/mia/vehicles/SelectCustomerCard
 import { AddVehicleDialog } from "@/components/mia/vehicles/AddVehicleDialog";
 import { VehicleGrid } from "@/components/mia/vehicles/VehicleGrid";
 
-export default function VehiclesPage() {
+function VehiclesPageContent() {
     const searchParams = useSearchParams();
     const { customers, getVehiclesByCustomer, getCustomerById } = useMiaStore();
     const [isLoading] = useState(false);
@@ -95,5 +95,20 @@ export default function VehiclesPage() {
                 </>
             )}
         </motion.div>
+    );
+}
+
+export default function VehiclesPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="space-y-6">
+                    <div className="h-10 w-64 rounded shimmer" />
+                    <CardSkeleton count={3} />
+                </div>
+            }
+        >
+            <VehiclesPageContent />
+        </Suspense>
     );
 }
