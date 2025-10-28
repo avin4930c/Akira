@@ -58,7 +58,7 @@ class CustomerService:
         if email is not None:
             # If email is changing, ensure uniqueness
             if email != customer.email:
-                existing_by_email = self.session.exec(select(Customer).where(Customer.email == email and Customer.id != customer_id)).first()
+                existing_by_email = self.session.exec(select(Customer).where(Customer.email == email)).first()
                 if existing_by_email and existing_by_email.id != customer_id:
                     raise ConflictError(f"Email '{email}' is already registered to another customer")
             updates["email"] = email
@@ -86,13 +86,16 @@ class CustomerService:
         if not customer:
             return False
 
-        # Single transaction ensures atomicity
-        with self.session.begin():
+        try:
             vehicles = list(self.session.exec(select(Vehicle).where(Vehicle.customer_id == customer_id)).all())
             for v in vehicles:
                 self.session.delete(v)
             self.session.delete(customer)
-        return True
+            self.session.commit()
+            return True
+        except Exception:
+            self.session.rollback()
+            raise
 
     async def list_vehicles_for_customer(self, customer_id: str) -> List[Vehicle]:
         return list(self.session.exec(select(Vehicle).where(Vehicle.customer_id == customer_id)).all())
