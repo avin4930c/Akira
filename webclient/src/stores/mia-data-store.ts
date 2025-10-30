@@ -11,6 +11,7 @@ interface MiaDataStore {
   // Actions
   addCustomer: (customer: Omit<Customer, "id" | "created_at">) => void;
   addVehicle: (vehicle: Omit<Vehicle, "id">) => void;
+  updateVehicle: (id: string, updates: Partial<Omit<Vehicle, "id" | "customer_id">>) => void;
   addServiceJob: (job: Omit<ServiceJob, "id" | "created_at">) => void;
   getCustomerById: (id: string) => Customer | undefined;
   getVehicleById: (id: string) => Vehicle | undefined;
@@ -117,6 +118,19 @@ export const useMiaStore = create<MiaDataStore>((set, get) => ({
     };
     set((state) => ({
       vehicles: [...state.vehicles, newVehicle],
+    }));
+  },
+
+  updateVehicle: (id, updates) => {
+    set((state) => ({
+      vehicles: state.vehicles.map((v) =>
+        v.id === id
+          ? {
+              ...v,
+              ...updates,
+            }
+          : v
+      ),
     }));
   },
 

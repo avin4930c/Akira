@@ -1,10 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useMiaStore } from "@/stores/mia-data-store";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect } from "react";
+import { useForm, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createVehicleSchema, type CreateVehicleInput } from "@/schema/vehicle";
+import { VehicleFields } from "@/components/mia/vehicles/VehicleFields";
 
 interface AddVehicleDialogProps {
     open: boolean;
@@ -15,18 +17,36 @@ interface AddVehicleDialogProps {
 
 export function AddVehicleDialog({ open, onOpenChange, selectedCustomerName, selectedCustomerId }: AddVehicleDialogProps) {
     const { addVehicle } = useMiaStore();
-    const [vehicleForm, setVehicleForm] = useState({
-        make: "",
-        model: "",
-        year: new Date().getFullYear(),
-        registration: "",
-        mileage: 0,
-        engine_type: "",
-        last_service_date: "",
+    const form = useForm<CreateVehicleInput>({
+        resolver: zodResolver(createVehicleSchema) as Resolver<CreateVehicleInput>,
+        defaultValues: {
+            customer_id: selectedCustomerId || "",
+            make: "",
+            model: "",
+            year: new Date().getFullYear(),
+            registration: "",
+            mileage: 0,
+            engine_type: "",
+            last_service_date: "",
+        },
     });
 
-    const reset = () =>
-        setVehicleForm({
+    useEffect(() => {
+        if (selectedCustomerId) {
+            form.setValue("customer_id", selectedCustomerId);
+        }
+    }, [selectedCustomerId]);
+
+    const handleAddVehicle = async (values: CreateVehicleInput) => {
+        if (!values.customer_id) {
+            toast.error("Please select a customer first");
+            return;
+        }
+        addVehicle(values);
+        toast.success("Vehicle added locally");
+        onOpenChange(false);
+        form.reset({
+            customer_id: selectedCustomerId || "",
             make: "",
             model: "",
             year: new Date().getFullYear(),
@@ -36,20 +56,6 @@ export function AddVehicleDialog({ open, onOpenChange, selectedCustomerName, sel
             last_service_date: "",
         });
 
-    const handleAddVehicle = () => {
-        if (!selectedCustomerId) {
-            toast.error("Please select a customer first");
-            return;
-        }
-        if (!vehicleForm.make || !vehicleForm.model || !vehicleForm.registration) {
-            toast.error("Please fill all required fields");
-            return;
-        }
-
-        addVehicle({ ...vehicleForm, customer_id: selectedCustomerId });
-        toast.success("Vehicle added successfully");
-        onOpenChange(false);
-        reset();
     };
 
     return (
@@ -65,41 +71,13 @@ export function AddVehicleDialog({ open, onOpenChange, selectedCustomerName, sel
                             <div className="font-medium">{selectedCustomerName}</div>
                         </div>
                     )}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="make">Make *</Label>
-                            <Input id="make" placeholder="Yamaha" className="mt-1.5" value={vehicleForm.make} onChange={(e) => setVehicleForm({ ...vehicleForm, make: e.target.value })} />
-                        </div>
-                        <div>
-                            <Label htmlFor="model">Model *</Label>
-                            <Input id="model" placeholder="MT-07" className="mt-1.5" value={vehicleForm.model} onChange={(e) => setVehicleForm({ ...vehicleForm, model: e.target.value })} />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="year">Year *</Label>
-                            <Input id="year" type="number" placeholder="2023" className="mt-1.5" value={vehicleForm.year} onChange={(e) => setVehicleForm({ ...vehicleForm, year: parseInt(e.target.value) || new Date().getFullYear() })} />
-                        </div>
-                        <div>
-                            <Label htmlFor="registration">Registration No. *</Label>
-                            <Input id="registration" placeholder="ABC-1234" className="mt-1.5" value={vehicleForm.registration} onChange={(e) => setVehicleForm({ ...vehicleForm, registration: e.target.value })} />
-                        </div>
-                    </div>
-                    <div>
-                        <Label htmlFor="mileage">Mileage (km)</Label>
-                        <Input id="mileage" type="number" placeholder="12500" className="mt-1.5" value={vehicleForm.mileage} onChange={(e) => setVehicleForm({ ...vehicleForm, mileage: parseInt(e.target.value) || 0 })} />
-                    </div>
-                    <div>
-                        <Label htmlFor="engine">Engine Type *</Label>
-                        <Input id="engine" placeholder="689cc Parallel Twin" className="mt-1.5" value={vehicleForm.engine_type} onChange={(e) => setVehicleForm({ ...vehicleForm, engine_type: e.target.value })} />
-                    </div>
-                    <div>
-                        <Label htmlFor="lastService">Last Service Date</Label>
-                        <Input id="lastService" type="date" className="mt-1.5" value={vehicleForm.last_service_date} onChange={(e) => setVehicleForm({ ...vehicleForm, last_service_date: e.target.value })} />
-                    </div>
-                    <Button onClick={handleAddVehicle} className="w-full bg-gradient-to-r from-primary to-blue-500">
-                        Add Vehicle
-                    </Button>
+                    <form onSubmit={form.handleSubmit(handleAddVehicle)} className="space-y-4">
+                        <input type="hidden" {...form.register("customer_id")} />
+                        <VehicleFields form={form} />
+                        <Button type="submit" disabled={form.formState.isSubmitting} className="w-full bg-gradient-to-r from-primary to-blue-500">
+                            {form.formState.isSubmitting ? "Adding..." : "Add Vehicle"}
+                        </Button>
+                    </form>
                 </div>
             </DialogContent>
         </Dialog>
