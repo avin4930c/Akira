@@ -45,7 +45,7 @@ export function EditVehicleDialog({ open, onOpenChange, vehicleId }: EditVehicle
         last_service_date: existing.last_service_date,
       });
     }
-  }, [existing?.id]);
+  }, [existing?.id, form]);
 
   async function onSubmit(values: VehicleFormValues) {
       updateVehicle(vehicleId, values);

@@ -35,7 +35,7 @@ export function AddVehicleDialog({ open, onOpenChange, selectedCustomerName, sel
         if (selectedCustomerId) {
             form.setValue("customer_id", selectedCustomerId);
         }
-    }, [selectedCustomerId]);
+    }, [selectedCustomerId, form]);
 
     const handleAddVehicle = async (values: CreateVehicleInput) => {
         if (!values.customer_id) {
