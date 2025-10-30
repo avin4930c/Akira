@@ -67,7 +67,7 @@ export default function VehicleDetailPage() {
                         email={customer.email}
                         userId={customer.id}
                     />
-                    <VehicleDetailQuickActions />
+                    <VehicleDetailQuickActions vehicleId={vehicle.id} />
                 </div>
             </div>
         </motion.div>
