@@ -1,15 +1,31 @@
 import { motion } from "framer-motion";
-import { Eye } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Customer, Vehicle } from "@/types/mia";
+import type { Customer } from "@/types/mia";
+import { useState } from "react";
+import { useDeleteCustomerMutation } from "@/hooks/customer/useCustomer";
+import { toast } from "sonner";
+import ConfirmDeleteDialog from "@/components/ui/confirm-delete-dialog";
 
 interface CustomersTableProps {
     customers: Customer[];
-    getVehiclesByCustomer: (customerId: string) => Vehicle[];
     onViewVehicles: (customerId: string) => void;
 }
 
-export function CustomersTable({ customers, getVehiclesByCustomer, onViewVehicles }: CustomersTableProps) {
+export function CustomersTable({ customers, onViewVehicles }: CustomersTableProps) {
+    const [confirmId, setConfirmId] = useState<string | null>(null);
+    const deleteCustomerMutation = useDeleteCustomerMutation();
+
+    async function handleDeleteCustomer() {
+        if (!confirmId) return;
+        try {
+            await deleteCustomerMutation.mutateAsync(confirmId);
+            toast.success("Customer deleted");
+        } catch (error) {
+            toast.error("Failed to delete customer");
+        }
+    }
+
     return (
         <div className="glass-card rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
@@ -41,7 +57,7 @@ export function CustomersTable({ customers, getVehiclesByCustomer, onViewVehicle
                                 <td className="px-6 py-4 text-muted-foreground">{customer.email}</td>
                                 <td className="px-6 py-4">
                                     <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                                        {getVehiclesByCustomer(customer.id).length}
+                                        {customer.vehicle_count}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
@@ -55,6 +71,14 @@ export function CustomersTable({ customers, getVehiclesByCustomer, onViewVehicle
                                             <Eye className="w-4 h-4 mr-2" />
                                             View Vehicles
                                         </Button>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => setConfirmId(customer.id)}
+                                        >
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Delete
+                                        </Button>
                                     </div>
                                 </td>
                             </motion.tr>
@@ -62,6 +86,15 @@ export function CustomersTable({ customers, getVehiclesByCustomer, onViewVehicle
                     </tbody>
                 </table>
             </div>
+            
+            <ConfirmDeleteDialog
+                open={!!confirmId}
+                onOpenChange={(open) => { if (!open) setConfirmId(null); }}
+                title="Delete Customer"
+                description="This action cannot be undone. This will permanently delete the customer and their related data."
+                loading={deleteCustomerMutation.isPending}
+                onConfirm={handleDeleteCustomer}
+            />
         </div>
     );
 }

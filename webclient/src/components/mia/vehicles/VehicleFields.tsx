@@ -9,7 +9,7 @@ type VehicleFieldShape = {
     registration: string;
     mileage: number;
     engine_type: string;
-    last_service_date: string;
+    last_service_date?: string;
 };
 
 export function VehicleFields<T extends VehicleFieldShape>({ form }: { form: UseFormReturn<T> }) {

@@ -3,33 +3,47 @@
 import { motion } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
 import { Car } from "lucide-react";
-import { useMiaStore } from "@/stores/mia-data-store";
 import EmptyState from "@/components/mia/common/EmptyState";
 import { VehicleDetailHeader } from "@/components/mia/vehicles/VehicleDetailHeader";
 import { VehicleSpecsCard } from "@/components/mia/vehicles/VehicleSpecsCard";
 import { VehicleServiceHistory } from "@/components/mia/vehicles/VehicleServiceHistory";
 import { OwnerInfoCard } from "@/components/mia/vehicles/OwnerInfoCard";
 import { VehicleDetailQuickActions } from "@/components/mia/vehicles/VehicleDetailQuickActions";
+import { useVehicleById } from "@/hooks/vehicles/useVehicles";
+import { useCustomerById } from "@/hooks/customer/useCustomer";
+import { ServiceJob } from "@/types/mia";
 
 export default function VehicleDetailPage() {
     const params = useParams();
     const router = useRouter();
     const vehicleId = params?.vehicleId as string;
-    const { getVehicleById, getCustomerById, serviceJobs } = useMiaStore();
+    const { data: vehicle, isLoading: vehicleLoading, error: vehicleError } = useVehicleById(vehicleId);
+    const { data: customer, isLoading: customerLoading, error: customerError } = useCustomerById(vehicle?.customer_id ?? "");
+    const vehicleJobs: ServiceJob[] = []; // TODO: Add proper type and fetch service jobs for the vehicle
 
-    const vehicle = getVehicleById(vehicleId || "");
-    const customer = vehicle ? getCustomerById(vehicle.customer_id) : undefined;
-    const vehicleJobs = serviceJobs.filter((job) => job.vehicle_id === vehicleId);
+    if (vehicleLoading) {
+        return <div className="text-sm text-muted-foreground">Loading vehicle…</div>;
+    }
 
-    if (!vehicle || !customer) {
+    if (vehicleError || !vehicle) {
         return (
             <EmptyState
                 icon={Car}
                 title="Vehicle not found"
-                description="The vehicle you're looking for doesn't exist."
+                description="The vehicle you're looking for doesn't exist or failed to load."
                 actionLabel="Back to Vehicles"
                 onAction={() => router.push("/mia/vehicles")}
             />
+        );
+    }
+
+    if (customerLoading) {
+        return <div className="text-sm text-muted-foreground">Loading owner details…</div>;
+    }
+
+    if (customerError || !customer) {
+        return (
+            <div className="text-red-500">Failed to load vehicle owner details.</div>
         );
     }
 
@@ -42,7 +56,7 @@ export default function VehicleDetailPage() {
             <VehicleDetailHeader
                 title={`${vehicle.make} ${vehicle.model}`}
                 subtitle="Vehicle Details"
-                backHref="/mia/vehicles"
+                backHref={`/mia/vehicles?customer=${customer.id}`}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -67,7 +81,7 @@ export default function VehicleDetailPage() {
                         email={customer.email}
                         userId={customer.id}
                     />
-                    <VehicleDetailQuickActions vehicleId={vehicle.id} />
+                    <VehicleDetailQuickActions vehicleId={vehicle.id} vehicle={vehicle} isLoading={vehicleLoading} error={vehicleError} />
                 </div>
             </div>
         </motion.div>

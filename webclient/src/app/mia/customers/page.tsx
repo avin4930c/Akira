@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Users } from "lucide-react";
-import { useMiaStore } from "@/stores/mia-data-store";
 import EmptyState from "@/components/mia/common/EmptyState";
 import { TableSkeleton } from "@/components/mia/common/LoadingSkeleton";
 import { useRouter } from "next/navigation";
@@ -11,21 +10,24 @@ import { CustomersHeader } from "@/components/mia/customers/CustomersHeader";
 import { CustomersSearchBar } from "@/components/mia/customers/CustomersSearchBar";
 import { CustomersTable } from "@/components/mia/customers/CustomersTable";
 import { AddCustomerDialog } from "@/components/mia/customers/AddCustomerDialog";
+import { useCustomers, useCustomerSearchSuggestions } from "@/hooks/customer/useCustomer";
+import { useDebouncedValue } from "@/hooks/common/useDebouncedValue";
 
 export default function CustomersPage() {
   const router = useRouter();
-  const { customers, getVehiclesByCustomer } = useMiaStore();
   const [search, setSearch] = useState("");
-  const [isLoading] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const filteredCustomers = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const debouncedSearch = useDebouncedValue(search, 400);
+  const { data: allCustomers, isLoading: loadingAll } = useCustomers();
+  const { data: suggestions, isLoading: loadingSuggestions } = useCustomerSearchSuggestions(debouncedSearch);
 
-  if (isLoading) {
+  const customers = useMemo(() => {
+    if (debouncedSearch && suggestions) return suggestions;
+    return allCustomers ?? [];
+  }, [debouncedSearch, suggestions, allCustomers]);
+
+  if (loadingAll && !debouncedSearch) {
     return (
       <div className="space-y-6">
         <div className="h-10 w-64 rounded shimmer" />
@@ -34,7 +36,7 @@ export default function CustomersPage() {
     );
   }
 
-  if (customers.length === 0) {
+  if (!debouncedSearch && (allCustomers?.length ?? 0) === 0) {
     return (
       <>
         <AddCustomerDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
@@ -60,9 +62,11 @@ export default function CustomersPage() {
 
       <CustomersSearchBar value={search} onChange={setSearch} />
 
+
+      {loadingSuggestions && <div>Loading search results</div>}
+
       <CustomersTable
-        customers={filteredCustomers}
-        getVehiclesByCustomer={getVehiclesByCustomer}
+        customers={customers}
         onViewVehicles={(customerId) => router.push(`/mia/vehicles?customer=${customerId}`)}
       />
     </motion.div>
