@@ -5,17 +5,16 @@ import { motion } from "framer-motion";
 import { Car as CarIcon } from "lucide-react";
 import EmptyState from "@/components/mia/common/EmptyState";
 import { CardSkeleton } from "@/components/mia/common/LoadingSkeleton";
-import { useMiaStore } from "@/stores/mia-data-store";
 import { useSearchParams } from "next/navigation";
 import { VehiclesHeader } from "@/components/mia/vehicles/VehiclesHeader";
 import { SelectCustomerCard } from "@/components/mia/vehicles/SelectCustomerCard";
 import { AddVehicleDialog } from "@/components/mia/vehicles/AddVehicleDialog";
 import { VehicleGrid } from "@/components/mia/vehicles/VehicleGrid";
+import { useCustomerById } from "@/hooks/customer/useCustomer";
+import { useVehiclesByCustomerId } from "@/hooks/vehicles/useVehicles";
 
 function VehiclesPageContent() {
     const searchParams = useSearchParams();
-    const { customers, getVehiclesByCustomer, getCustomerById } = useMiaStore();
-    const [isLoading] = useState(false);
     const [selectedCustomerId, setSelectedCustomerId] = useState("");
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
@@ -27,22 +26,23 @@ function VehiclesPageContent() {
         }
     }, [searchParams]);
 
-    const customerOptions = customers.map((c) => ({
-        value: c.id,
-        label: c.name,
-        subtitle: `${c.phone} • ${c.email}`,
-    }));
+    const { data: displayedVehicles, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesByCustomerId(selectedCustomerId);
+    const { data: selectedCustomer, error: selectedCustomerError } = useCustomerById(selectedCustomerId);
 
-    const selectedCustomer = getCustomerById(selectedCustomerId);
-    const displayedVehicles = selectedCustomerId ? getVehiclesByCustomer(selectedCustomerId) : [];
-
-    if (isLoading) {
+    if (vehiclesLoading) {
         return (
             <div className="space-y-6">
                 <div className="h-10 w-64 rounded shimmer" />
                 <CardSkeleton count={3} />
             </div>
         );
+    }
+
+    if (selectedCustomerId && selectedCustomerError) {
+        return <div className="text-red-500">Failed to load selected customer.</div>;
+    }
+    if (selectedCustomerId && vehiclesError) {
+        return <div className="text-red-500">Failed to load vehicles.</div>;
     }
 
     return (
@@ -62,11 +62,7 @@ function VehiclesPageContent() {
                 selectedCustomerId={selectedCustomerId}
             />
 
-            <SelectCustomerCard
-                options={customerOptions}
-                value={selectedCustomerId}
-                onChange={setSelectedCustomerId}
-            />
+            <SelectCustomerCard value={selectedCustomerId} onChange={setSelectedCustomerId} selectedCustomer={selectedCustomer} />
 
             {!selectedCustomerId ? (
                 <EmptyState
@@ -74,7 +70,7 @@ function VehiclesPageContent() {
                     title="No customer selected"
                     description="Select a customer above to view their vehicles and manage their fleet."
                 />
-            ) : displayedVehicles.length === 0 ? (
+            ) : (displayedVehicles?.length ?? 0) === 0 ? (
                 <EmptyState
                     icon={CarIcon}
                     title="No vehicles registered"
@@ -86,12 +82,12 @@ function VehiclesPageContent() {
                 <>
                     <div className="flex items-center justify-between px-1">
                         <p className="text-sm text-muted-foreground">
-                            Showing {displayedVehicles.length} vehicle{displayedVehicles.length !== 1 ? "s" : ""} for{" "}
+                            Showing {displayedVehicles?.length ?? 0} vehicle{(displayedVehicles?.length ?? 0) !== 1 ? "s" : ""} for{" "}
                             <span className="font-medium text-foreground">{selectedCustomer?.name}</span>
                         </p>
                     </div>
 
-                    <VehicleGrid vehicles={displayedVehicles} />
+                    <VehicleGrid vehicles={displayedVehicles!} />
                 </>
             )}
         </motion.div>

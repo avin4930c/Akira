@@ -1,22 +1,27 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useMiaStore } from "@/stores/mia-data-store";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateVehicleSchema, type VehicleFormValues } from "@/schema/vehicle";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { VehicleFields } from "@/components/mia/vehicles/VehicleFields";
+import { useUpdateVehicleMutation } from "@/hooks/vehicles/useVehicles";
+import type { Vehicle } from "@/types/mia";
 
 interface EditVehicleDialogProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   vehicleId: string;
+  vehicle: Vehicle;
+  isLoading: boolean;
+  error: unknown;
 }
 
-export function EditVehicleDialog({ open, onOpenChange, vehicleId }: EditVehicleDialogProps) {
-  const { getVehicleById, updateVehicle } = useMiaStore();
-  const existing = getVehicleById(vehicleId);
+export function EditVehicleDialog({ open, onOpenChange, vehicleId, vehicle, isLoading, error }: EditVehicleDialogProps) {
+  const updateMutation = useUpdateVehicleMutation();
+
+  const existing = vehicle;
 
   const form = useForm<VehicleFormValues>({
     resolver: zodResolver(updateVehicleSchema) as Resolver<VehicleFormValues>,
@@ -48,9 +53,18 @@ export function EditVehicleDialog({ open, onOpenChange, vehicleId }: EditVehicle
   }, [existing?.id, form]);
 
   async function onSubmit(values: VehicleFormValues) {
-      updateVehicle(vehicleId, values);
-      toast.success("Vehicle updated locally");
+    if (!existing) return;
+    try {
+      const payload = {
+        ...values,
+        last_service_date: values.last_service_date || undefined,
+      };
+      await updateMutation.mutateAsync({ vehicleId, data: payload });
+      toast.success("Vehicle updated");
       onOpenChange(false);
+    } catch (e) {
+      toast.error("Failed to update vehicle");
+    }
   }
 
   return (
@@ -59,7 +73,11 @@ export function EditVehicleDialog({ open, onOpenChange, vehicleId }: EditVehicle
         <DialogHeader>
           <DialogTitle className="text-2xl">Edit Vehicle</DialogTitle>
         </DialogHeader>
-        {!existing ? (
+        {isLoading && !existing ? (
+          <p className="text-muted-foreground">Loading vehicle…</p>
+        ) : error ? (
+          <p className="text-red-500">Failed to load vehicle.</p>
+        ) : !existing ? (
           <p className="text-muted-foreground">Vehicle not found.</p>
         ) : (
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
@@ -68,8 +86,8 @@ export function EditVehicleDialog({ open, onOpenChange, vehicleId }: EditVehicle
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting} className="bg-gradient-to-r from-primary to-blue-500">
-                {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
+              <Button type="submit" disabled={updateMutation.isPending} className="bg-gradient-to-r from-primary to-blue-500">
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </form>

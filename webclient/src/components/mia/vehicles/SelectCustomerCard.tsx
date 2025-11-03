@@ -1,19 +1,33 @@
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/mia/common/SearchableSelect";
-
-interface Option {
-    value: string;
-    label: string;
-    subtitle?: string;
-}
+import { useState, useMemo } from "react";
+import { useDebouncedValue } from "@/hooks/common/useDebouncedValue";
+import { useCustomerSearchSuggestions } from "@/hooks/customer/useCustomer";
+import type { Customer } from "@/types/mia";
 
 interface SelectCustomerCardProps {
-    options: Option[];
     value: string;
     onChange: (value: string) => void;
+    selectedCustomer?: Customer | null;
 }
 
-export function SelectCustomerCard({ options, value, onChange }: SelectCustomerCardProps) {
+export function SelectCustomerCard({ value, onChange, selectedCustomer }: SelectCustomerCardProps) {
+    const [search, setSearch] = useState("");
+    const debounced = useDebouncedValue(search, 400);
+    const { data: suggestions, isLoading } = useCustomerSearchSuggestions(debounced);
+
+    const options = useMemo(() => {
+        const base = (suggestions ?? []).map((c) => ({
+            value: c.id,
+            label: c.name,
+            subtitle: `${c.phone} • ${c.email}`,
+        }));
+        if (value && selectedCustomer && !base.some(o => o.value === value)) {
+            base.unshift({ value: selectedCustomer.id, label: selectedCustomer.name, subtitle: `${selectedCustomer.phone} • ${selectedCustomer.email}` });
+        }
+        return base;
+    }, [suggestions, selectedCustomer, value]);
+
     return (
         <div className="glass-card p-6 rounded-xl">
             <Label className="text-base font-semibold mb-3 block">Select Customer</Label>
@@ -23,7 +37,9 @@ export function SelectCustomerCard({ options, value, onChange }: SelectCustomerC
                 onValueChange={onChange}
                 placeholder="Search and select a customer..."
                 searchPlaceholder="Search by name, phone, or email..."
-                emptyText="No customers found."
+                emptyText={debounced ? "No customers found." : "Type to search customers..."}
+                onSearchChange={setSearch}
+                loading={isLoading}
             />
         </div>
     );

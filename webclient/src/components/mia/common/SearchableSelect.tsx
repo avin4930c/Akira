@@ -24,6 +24,8 @@ interface SearchableSelectProps {
     searchPlaceholder?: string;
     emptyText?: string;
     className?: string;
+    onSearchChange?: (value: string) => void;
+    loading?: boolean;
 }
 
 export function SearchableSelect({
@@ -34,6 +36,8 @@ export function SearchableSelect({
     searchPlaceholder = "Search...",
     emptyText = "No results found.",
     className,
+    onSearchChange,
+    loading = false,
 }: SearchableSelectProps) {
     const [open, setOpen] = React.useState(false);
 
@@ -65,9 +69,9 @@ export function SearchableSelect({
             </PopoverTrigger>
             <PopoverContent className="w-full p-0 bg-popover border-border">
                 <Command className="bg-transparent">
-                    <CommandInput placeholder={searchPlaceholder} className="bg-transparent" />
+                    <CommandInput placeholder={searchPlaceholder} className="bg-transparent" onValueChange={onSearchChange} />
                     <CommandList>
-                        <CommandEmpty>{emptyText}</CommandEmpty>
+                        <CommandEmpty>{loading ? "Searching..." : emptyText}</CommandEmpty>
                         <CommandGroup>
                             {options.map((option) => (
                                 <CommandItem

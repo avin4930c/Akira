@@ -1,12 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useMiaStore } from "@/stores/mia-data-store";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createVehicleSchema, type CreateVehicleInput } from "@/schema/vehicle";
 import { VehicleFields } from "@/components/mia/vehicles/VehicleFields";
+import { useAddVehicleMutation } from "@/hooks/vehicles/useVehicles";
 
 interface AddVehicleDialogProps {
     open: boolean;
@@ -16,7 +16,7 @@ interface AddVehicleDialogProps {
 }
 
 export function AddVehicleDialog({ open, onOpenChange, selectedCustomerName, selectedCustomerId }: AddVehicleDialogProps) {
-    const { addVehicle } = useMiaStore();
+    const addVehicleMutation = useAddVehicleMutation();
     const form = useForm<CreateVehicleInput>({
         resolver: zodResolver(createVehicleSchema) as Resolver<CreateVehicleInput>,
         defaultValues: {
@@ -42,8 +42,13 @@ export function AddVehicleDialog({ open, onOpenChange, selectedCustomerName, sel
             toast.error("Please select a customer first");
             return;
         }
-        addVehicle(values);
-        toast.success("Vehicle added locally");
+        try {
+            await addVehicleMutation.mutateAsync(values);
+            toast.success("Successfully added vehicle");
+        } catch (e) {
+            toast.error("Failed to add vehicle");
+            return;
+        }
         onOpenChange(false);
         form.reset({
             customer_id: selectedCustomerId || "",
@@ -74,8 +79,8 @@ export function AddVehicleDialog({ open, onOpenChange, selectedCustomerName, sel
                     <form onSubmit={form.handleSubmit(handleAddVehicle)} className="space-y-4">
                         <input type="hidden" {...form.register("customer_id")} />
                         <VehicleFields form={form} />
-                        <Button type="submit" disabled={form.formState.isSubmitting} className="w-full bg-gradient-to-r from-primary to-blue-500">
-                            {form.formState.isSubmitting ? "Adding..." : "Add Vehicle"}
+                        <Button type="submit" disabled={addVehicleMutation.isPending} className="w-full bg-gradient-to-r from-primary to-blue-500">
+                            {addVehicleMutation.isPending ? "Adding..." : "Add Vehicle"}
                         </Button>
                     </form>
                 </div>
