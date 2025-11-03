@@ -50,7 +50,6 @@ export const useAddCustomerMutation = () => {
         },
         onError: (error) => {
             console.error("Error adding new customer:", error);
-            throw error;
         }
     });
 }
@@ -65,7 +64,6 @@ export const useDeleteCustomerMutation = () => {
         },
         onError: (error) => {
             console.error("Error deleting customer:", error);
-            throw error;
         }
     });
 }

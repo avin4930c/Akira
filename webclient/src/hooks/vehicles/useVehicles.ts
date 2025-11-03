@@ -41,7 +41,6 @@ export const useAddVehicleMutation = () => {
         },
         onError: (error) => {
             console.error("Error adding new vehicle:", error);
-            throw error;
         }
     });
 }
@@ -57,7 +56,6 @@ export const useUpdateVehicleMutation = () => {
         },
         onError: (error) => {
             console.error("Error updating vehicle:", error);
-            throw error;
         }
     });
 }
@@ -75,7 +73,6 @@ export const useDeleteVehicleMutation = (customerId: string, router: AppRouterIn
         },
         onError: (error) => {
             console.error("Error deleting vehicle:", error);
-            throw error;
         }
     });
 }

@@ -10,7 +10,7 @@ export function useCustomerInvalidation() {
 
     const invalidateCustomerById = (customerId: string) => {
         queryClient.invalidateQueries({ queryKey: customerKeys.customer(customerId) });
-    }
+    };
 
     return { invalidateCustomers, invalidateCustomerById };
 }

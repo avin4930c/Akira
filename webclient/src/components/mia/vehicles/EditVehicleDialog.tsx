@@ -6,7 +6,7 @@ import { updateVehicleSchema, type VehicleFormValues } from "@/schema/vehicle";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { VehicleFields } from "@/components/mia/vehicles/VehicleFields";
-import { useUpdateVehicleMutation, useVehicleById } from "@/hooks/vehicles/useVehicles";
+import { useUpdateVehicleMutation } from "@/hooks/vehicles/useVehicles";
 import type { Vehicle } from "@/types/mia";
 
 interface EditVehicleDialogProps {
