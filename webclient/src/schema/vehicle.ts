@@ -19,8 +19,9 @@ export const vehicleBaseSchema = z.object({
   engine_type: z.string().min(1, "Engine type is required"),
   last_service_date: z
     .string()
+    .nullable()
     .optional()
-    .refine((v) => v === undefined || v === "" || !Number.isNaN(Date.parse(v)), {
+    .refine((v) => v == null || v === "" || !Number.isNaN(Date.parse(v)), {
       message: "Invalid date",
     }),
 });

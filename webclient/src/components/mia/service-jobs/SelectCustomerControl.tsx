@@ -3,7 +3,14 @@ import { SearchableSelect } from "@/components/mia/common/SearchableSelect";
 
 type Option = { value: string; label: string; subtitle?: string };
 
-export function SelectCustomerControl({ options, value, onChange }: { options: Option[]; value: string; onChange: (v: string) => void }) {
+interface SelectCustomerControlProps {
+    options: Option[];
+    value: string;
+    onChange: (v: string) => void;
+    loading?: boolean;
+}
+
+export function SelectCustomerControl({ options, value, onChange, loading = false }: SelectCustomerControlProps) {
     return (
         <div className="space-y-2">
             <Label htmlFor="customer">Select Customer *</Label>
@@ -12,8 +19,9 @@ export function SelectCustomerControl({ options, value, onChange }: { options: O
                 value={value}
                 onValueChange={onChange}
                 placeholder="Search and select a customer..."
-                searchPlaceholder="Search by name, phone, or email..."
-                emptyText="No customers found."
+                searchPlaceholder="Search by Customer Id"
+                emptyText={"No customers found."}
+                loading={loading}
             />
         </div>
     );

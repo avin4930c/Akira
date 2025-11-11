@@ -30,13 +30,14 @@ export function useVehicleById(vehicleId: string) {
 
 export const useAddVehicleMutation = () => {
     const { invalidateVehiclesByCustomerId } = useVehicleInvalidation();
-    const { invalidateCustomerById } = useCustomerInvalidation();
+    const { invalidateCustomers, invalidateCustomerById } = useCustomerInvalidation();
 
     return useMutation({
         mutationFn: (data: CreateVehicleInput) => addVehicle(data),
         onSuccess: (data) => {
             invalidateVehiclesByCustomerId(data.customer_id);
             invalidateCustomerById(data.customer_id);
+            invalidateCustomers();
             return data;
         },
         onError: (error) => {
