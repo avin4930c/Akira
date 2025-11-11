@@ -6,13 +6,15 @@ import { useState } from "react";
 import { useDeleteCustomerMutation } from "@/hooks/customer/useCustomer";
 import { toast } from "sonner";
 import ConfirmDeleteDialog from "@/components/ui/confirm-delete-dialog";
+import { HighlightedText } from "@/components/common/HighlightedText";
 
 interface CustomersTableProps {
     customers: Customer[];
     onViewVehicles: (customerId: string) => void;
+    searchQuery?: string;
 }
 
-export function CustomersTable({ customers, onViewVehicles }: CustomersTableProps) {
+export function CustomersTable({ customers, onViewVehicles, searchQuery = "" }: CustomersTableProps) {
     const [confirmId, setConfirmId] = useState<string | null>(null);
     const deleteCustomerMutation = useDeleteCustomerMutation();
 
@@ -50,11 +52,29 @@ export function CustomersTable({ customers, onViewVehicles }: CustomersTableProp
                                 className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
                             >
                                 <td className="px-6 py-4">
-                                    <span className="text-xs font-mono text-muted-foreground">{customer.id}</span>
+                                    <span className="text-xs font-mono text-muted-foreground">
+                                        {searchQuery ? (
+                                            <HighlightedText text={customer.id} query={searchQuery} />
+                                        ) : (
+                                            customer.id
+                                        )}
+                                    </span>
                                 </td>
-                                <td className="px-6 py-4 font-medium">{customer.name}</td>
+                                <td className="px-6 py-4 font-medium">
+                                    {searchQuery ? (
+                                        <HighlightedText text={customer.name} query={searchQuery} />
+                                    ) : (
+                                        customer.name
+                                    )}
+                                </td>
                                 <td className="px-6 py-4 text-muted-foreground">{customer.phone}</td>
-                                <td className="px-6 py-4 text-muted-foreground">{customer.email}</td>
+                                <td className="px-6 py-4 text-muted-foreground">
+                                    {searchQuery ? (
+                                        <HighlightedText text={customer.email} query={searchQuery} />
+                                    ) : (
+                                        customer.email
+                                    )}
+                                </td>
                                 <td className="px-6 py-4">
                                     <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
                                         {customer.vehicle_count}

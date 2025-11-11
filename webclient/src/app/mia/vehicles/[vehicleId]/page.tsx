@@ -81,7 +81,7 @@ export default function VehicleDetailPage() {
                         email={customer.email}
                         userId={customer.id}
                     />
-                    <VehicleDetailQuickActions vehicleId={vehicle.id} vehicle={vehicle} isLoading={vehicleLoading} error={vehicleError} />
+                    <VehicleDetailQuickActions router={router} vehicleId={vehicle.id} vehicle={vehicle} isLoading={vehicleLoading} error={vehicleError} />
                 </div>
             </div>
         </motion.div>

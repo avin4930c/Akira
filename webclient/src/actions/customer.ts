@@ -3,7 +3,7 @@ import { Customer } from "@/types/mia";
 
 export async function addCustomer(data: Customer): Promise<Customer> {
     try {
-        const response = await api.post<Customer, Customer>("/customer", data);
+        const response = await api.post<Customer, Customer>("/customer/", data);
         return response;
     } catch (error) {
         console.error("Error adding new customer:", error);
@@ -13,7 +13,7 @@ export async function addCustomer(data: Customer): Promise<Customer> {
 
 export async function getCustomers(): Promise<Customer[]> {
     try {
-        const response = await api.get<Customer[]>("/customer");
+        const response = await api.get<Customer[]>("/customer/");
         return response;
     } catch (error) {
         console.error("Error fetching customers:", error);

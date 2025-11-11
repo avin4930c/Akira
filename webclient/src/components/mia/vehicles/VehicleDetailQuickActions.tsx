@@ -2,23 +2,23 @@
 
 import { Button } from "@/components/ui/button";
 import { Wrench, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EditVehicleDialog } from "@/components/mia/vehicles/EditVehicleDialog";
 import type { Vehicle } from "@/types/mia";
 import ConfirmDeleteDialog from "@/components/ui/confirm-delete-dialog";
 import { useDeleteVehicleMutation } from "@/hooks/vehicles/useVehicles";
 import { toast } from "sonner";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 interface VehicleDetailQuickActionsProps {
+    router: AppRouterInstance;
     vehicleId: string;
     vehicle: Vehicle;
     isLoading: boolean;
     error: unknown;
 }
 
-export function VehicleDetailQuickActions({ vehicleId, vehicle, isLoading, error }: VehicleDetailQuickActionsProps) {
-    const router = useRouter();
+export function VehicleDetailQuickActions({ router, vehicleId, vehicle, isLoading, error }: VehicleDetailQuickActionsProps) {
     const [editOpen, setEditOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const deleteMutation = useDeleteVehicleMutation(vehicle.customer_id, router);
@@ -32,10 +32,14 @@ export function VehicleDetailQuickActions({ vehicleId, vehicle, isLoading, error
         }
     }
 
+    function handleClickCreateServiceJob() {
+        router.push(`/mia/service-jobs/new?customer=${vehicle.customer_id}&vehicle=${vehicleId}`);
+    }
+
     return (
         <div className="glass-card p-6 rounded-xl space-y-3">
             <h3 className="font-semibold mb-4">Quick Actions</h3>
-            <Button className="w-full bg-gradient-to-r from-primary to-blue-500" onClick={() => router.push("/mia/service-jobs/new")}>
+            <Button className="w-full bg-gradient-to-r from-primary to-blue-500" onClick={handleClickCreateServiceJob}>
                 <Wrench className="w-4 h-4 mr-2" />
                 Create Service Job
             </Button>

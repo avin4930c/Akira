@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useMiaStore } from "@/stores/mia-data-store";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ServiceJobStatus } from "@/types/mia";
 import { NewServiceJobHeader } from "@/components/mia/service-jobs/NewServiceJobHeader";
 import { SelectCustomerControl } from "@/components/mia/service-jobs/SelectCustomerControl";
@@ -14,10 +14,14 @@ import { SelectVehicleControl } from "@/components/mia/service-jobs/SelectVehicl
 import { SelectMechanicControl } from "@/components/mia/service-jobs/SelectMechanicControl";
 import { NotesField } from "@/components/mia/service-jobs/NotesField";
 import { FormActions } from "@/components/mia/service-jobs/FormActions";
+import { useCustomers } from "@/hooks/customer/useCustomer";
+import { useVehiclesByCustomerId } from "@/hooks/vehicles/useVehicles";
+import { CardSkeleton } from "@/components/mia/common/LoadingSkeleton";
 
-export default function NewServiceJobPage() {
+function NewServiceJobContent() {
     const router = useRouter();
-    const { customers, getVehiclesByCustomer, mechanics, addServiceJob } = useMiaStore();
+    const searchParams = useSearchParams();
+
     const [selectedCustomer, setSelectedCustomer] = useState("");
     const [selectedVehicle, setSelectedVehicle] = useState("");
     const [selectedMechanic, setSelectedMechanic] = useState("");
@@ -25,17 +29,34 @@ export default function NewServiceJobPage() {
     const [showWarning, setShowWarning] = useState(false);
 
     useEffect(() => {
-        setSelectedVehicle("");
+        const customerFromUrl = searchParams?.get("customer");
+        const vehicleFromUrl = searchParams?.get("vehicle");
+
+        if (customerFromUrl) {
+            setSelectedCustomer(customerFromUrl);
+        }
+        if (vehicleFromUrl) {
+            setSelectedVehicle(vehicleFromUrl);
+        }
+    }, [searchParams]);
+
+    const { data: allCustomers, isLoading: loadingCustomers } = useCustomers();
+    const { data: customerVehicles, isLoading: loadingVehicles } = useVehiclesByCustomerId(selectedCustomer);
+
+    const { mechanics, addServiceJob } = useMiaStore();
+
+    useEffect(() => {
+        if (!searchParams.get("vehicle")) setSelectedVehicle("");
     }, [selectedCustomer]);
 
-    const customerOptions = customers.map((c) => ({
+    const customerOptions = (allCustomers || []).map((c) => ({
         value: c.id,
         label: c.name,
         subtitle: `${c.phone} • ${c.email}`,
     }));
 
     const vehicleOptions = selectedCustomer
-        ? getVehiclesByCustomer(selectedCustomer).map((v) => ({
+        ? (customerVehicles || []).map((v) => ({
             value: v.id,
             label: `${v.make} ${v.model}`,
             subtitle: `${v.registration} • ${v.year}`,
@@ -50,7 +71,7 @@ export default function NewServiceJobPage() {
 
     const handleValidate = () => {
         const trimmedNotes = notes.trim();
-        
+
         if (!selectedCustomer || !selectedVehicle || !selectedMechanic) {
             toast.error("Please fill all required fields");
             return;
@@ -94,9 +115,20 @@ export default function NewServiceJobPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto space-y-6">
             <NewServiceJobHeader />
             <div className="glass-card p-8 rounded-xl space-y-6">
-                <SelectCustomerControl options={customerOptions} value={selectedCustomer} onChange={(v) => { setSelectedCustomer(v); setShowWarning(false); }} />
+                <SelectCustomerControl
+                    options={customerOptions}
+                    value={selectedCustomer}
+                    onChange={(v) => { setSelectedCustomer(v); setShowWarning(false); }}
+                    loading={loadingCustomers}
+                />
 
-                <SelectVehicleControl options={vehicleOptions} value={selectedVehicle} onChange={(v) => { setSelectedVehicle(v); setShowWarning(false); }} visible={!!selectedCustomer} />
+                <SelectVehicleControl
+                    options={vehicleOptions}
+                    value={selectedVehicle}
+                    onChange={(v) => { setSelectedVehicle(v); setShowWarning(false); }}
+                    visible={!!selectedCustomer}
+                    loading={loadingVehicles}
+                />
 
                 <SelectMechanicControl options={mechanicOptions} value={selectedMechanic} onChange={(v) => { setSelectedMechanic(v); setShowWarning(false); }} />
 
@@ -120,5 +152,18 @@ export default function NewServiceJobPage() {
                 />
             </div>
         </motion.div>
+    );
+}
+
+export default function NewServiceJobPage() {
+    return (
+        <Suspense fallback={
+            <div className="space-y-6">
+                <div className="h-10 w-64 rounded shimmer" />
+                <CardSkeleton count={3} />
+            </div>
+        }>
+            <NewServiceJobContent />
+        </Suspense>
     );
 }

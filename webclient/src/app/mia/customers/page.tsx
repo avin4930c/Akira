@@ -68,6 +68,7 @@ export default function CustomersPage() {
       <CustomersTable
         customers={customers}
         onViewVehicles={(customerId) => router.push(`/mia/vehicles?customer=${customerId}`)}
+        searchQuery={debouncedSearch}
       />
     </motion.div>
   );

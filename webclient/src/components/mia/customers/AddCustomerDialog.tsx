@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useMiaStore } from "@/stores/mia-data-store";
+import { useAddCustomerMutation } from "@/hooks/customer/useCustomer";
 
 interface AddCustomerDialogProps {
     open: boolean;
@@ -14,7 +14,7 @@ interface AddCustomerDialogProps {
 }
 
 export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps) {
-    const { addCustomer } = useMiaStore();
+    const addCustomerMutation = useAddCustomerMutation();
     const [formData, setFormData] = useState({
         id: "",
         name: "",
@@ -24,16 +24,27 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
 
     const reset = () => setFormData({ id: "", name: "", phone: "", email: "" });
 
-    const handleAdd = () => {
+    const handleAdd = async () => {
         if (!formData.id || !formData.name || !formData.phone || !formData.email) {
             toast.error("All fields are required");
             return;
         }
-        // Store generates the ID and created_at; we persist the core fields.
-        addCustomer({ name: formData.name, phone: formData.phone, email: formData.email });
-        toast.success("Customer added successfully");
-        onOpenChange(false);
-        reset();
+        
+        try {
+            await addCustomerMutation.mutateAsync({
+                id: formData.id,
+                name: formData.name,
+                phone: formData.phone,
+                email: formData.email,
+                vehicle_count: 0,
+                created_at: new Date().toISOString(),
+            });
+            toast.success("Customer added successfully");
+            onOpenChange(false);
+            reset();
+        } catch (error) {
+            toast.error("Failed to add customer");
+        }
     };
 
     return (
@@ -47,7 +58,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                         <Label htmlFor="user_id">User ID *</Label>
                         <Input
                             id="user_id"
-                            placeholder="USR-001"
+                            placeholder="e.g., USR-001"
                             className="mt-1.5"
                             value={formData.id}
                             onChange={(e) => setFormData({ ...formData, id: e.target.value })}
@@ -57,7 +68,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                         <Label htmlFor="name">Full Name *</Label>
                         <Input
                             id="name"
-                            placeholder="John Rider"
+                            placeholder="e.g., John Rider"
                             className="mt-1.5"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -67,7 +78,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                         <Label htmlFor="phone">Phone Number *</Label>
                         <Input
                             id="phone"
-                            placeholder="+1 234 567 8900"
+                            placeholder="e.g., +1 234 567 8900"
                             className="mt-1.5"
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -78,14 +89,18 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                         <Input
                             id="email"
                             type="email"
-                            placeholder="john@example.com"
+                            placeholder="e.g., john@example.com"
                             className="mt-1.5"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         />
                     </div>
-                    <Button onClick={handleAdd} className="w-full bg-gradient-to-r from-primary to-blue-500">
-                        Add Customer
+                    <Button 
+                        onClick={handleAdd} 
+                        className="w-full bg-gradient-to-r from-primary to-blue-500"
+                        disabled={addCustomerMutation.isPending}
+                    >
+                        {addCustomerMutation.isPending ? "Adding..." : "Add Customer"}
                     </Button>
                 </div>
             </DialogContent>

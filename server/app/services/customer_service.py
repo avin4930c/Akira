@@ -35,7 +35,12 @@ class CustomerService:
         q = (q or "").strip()
         if not q:
             return []
-        statement = select(Customer).where(Customer.id.contains(q)).limit(5)
+        search_pattern = f"%{q}%"
+        statement = select(Customer).where(
+            (Customer.id.ilike(search_pattern)) |
+            (Customer.name.ilike(search_pattern)) |
+            (Customer.email.ilike(search_pattern))
+        ).limit(10)
         return list(self.session.exec(statement).all())
     
     async def update_customer(
