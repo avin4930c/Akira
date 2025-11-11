@@ -14,11 +14,11 @@ export function HighlightedText({ text, query, className = "", highlightClassNam
         <span className={className}>
             {segments.map((segment, index) => (
                 segment.highlight ? (
-                    <mark key={index} className={highlightClassName}>
+                    <mark key={`${index}-${segment.highlight}-${segment.text}`} className={highlightClassName}>
                         {segment.text}
                     </mark>
                 ) : (
-                    <span key={index}>{segment.text}</span>
+                    <span key={`${index}-${segment.highlight}-${segment.text}`}>{segment.text}</span>
                 )
             ))}
         </span>

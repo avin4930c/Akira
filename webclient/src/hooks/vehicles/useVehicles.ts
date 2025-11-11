@@ -37,7 +37,7 @@ export const useAddVehicleMutation = () => {
         onSuccess: (data) => {
             invalidateVehiclesByCustomerId(data.customer_id);
             invalidateCustomerById(data.customer_id);
-            invalidateCustomers()
+            invalidateCustomers();
             return data;
         },
         onError: (error) => {

@@ -4,6 +4,7 @@ from sqlmodel import Session, select
 from typing import Optional, List
 from app.model.sql_models.mia import Customer, Vehicle
 from app.core.errors import ConflictError
+from app.constants.common import MAX_SEARCH_RESULTS
 
 class CustomerService:
     def __init__(self, session: Session):
@@ -40,7 +41,7 @@ class CustomerService:
             (Customer.id.ilike(search_pattern)) |
             (Customer.name.ilike(search_pattern)) |
             (Customer.email.ilike(search_pattern))
-        ).limit(10)
+        ).limit(MAX_SEARCH_RESULTS)
         return list(self.session.exec(statement).all())
     
     async def update_customer(
