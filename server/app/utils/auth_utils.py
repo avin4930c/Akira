@@ -18,6 +18,9 @@ class AuthUtil:
             if not session_token:
                 raise HTTPException(status_code=401, detail="Missing or invalid token")
 
+            if not self.public_key:
+                raise HTTPException(status_code=500, detail="Server configuration error: Missing Clerk public key")
+
             payload = decode(
                 session_token,
                 self.public_key,
@@ -27,7 +30,7 @@ class AuthUtil:
             return payload["sub"]
         except PyJWTError as e:
             raise HTTPException(
-                status_code=401, detail=f"Invalid token present: {e!s}"
+                status_code=401, detail=f"Invalid token: {str(e)}"
             ) from e
 
     @staticmethod
