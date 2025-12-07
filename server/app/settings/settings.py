@@ -21,5 +21,10 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     CLERK_JWT_PUBLIC_KEY: Optional[str] = None
 
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_MAX_REQUESTS: int = 60
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+    RATE_LIMIT_EXEMPT_PATHS: list[str] = []
+
 
 settings = Settings()
