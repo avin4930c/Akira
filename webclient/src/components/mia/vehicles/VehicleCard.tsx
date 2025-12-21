@@ -10,7 +10,7 @@ interface VehicleCardProps {
         year: number;
         registration: string;
         mileage: number;
-        last_service_date: string;
+        last_service_date?: string;
     };
 }
 
@@ -53,7 +53,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
             <div className="pt-2">
                 <div className="text-xs text-muted-foreground">Last Service</div>
                 <div className="text-sm font-medium">
-                    {new Date(vehicle.last_service_date).toLocaleDateString()}
+                    {vehicle.last_service_date ? new Date(vehicle.last_service_date).toLocaleDateString() : "N/A"}
                 </div>
             </div>
 
