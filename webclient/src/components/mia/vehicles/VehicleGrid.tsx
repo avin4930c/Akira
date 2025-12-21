@@ -9,7 +9,7 @@ interface VehicleGridProps {
         year: number;
         registration: string;
         mileage: number;
-        last_service_date: string;
+        last_service_date?: string;
     }>;
 }
 

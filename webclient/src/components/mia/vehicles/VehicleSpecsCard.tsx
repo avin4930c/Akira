@@ -7,7 +7,7 @@ interface VehicleSpecsCardProps {
     registration: string;
     mileage: number;
     engine_type: string;
-    last_service_date: string;
+    last_service_date?: string;
 }
 
 export function VehicleSpecsCard({ make, model, year, registration, mileage, engine_type, last_service_date }: VehicleSpecsCardProps) {
@@ -54,7 +54,7 @@ export function VehicleSpecsCard({ make, model, year, registration, mileage, eng
                 <div className="col-span-2">
                     <div className="text-sm text-muted-foreground">Last Service Date</div>
                     <div className="font-medium mt-1">
-                        {new Date(last_service_date).toLocaleDateString()}
+                        {last_service_date ? new Date(last_service_date).toLocaleDateString() : "N/A"}
                     </div>
                 </div>
             </div>

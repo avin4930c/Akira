@@ -23,7 +23,7 @@ export interface Vehicle {
   registration: string;
   mileage: number;
   engine_type: string;
-  last_service_date: string;
+  last_service_date?: string;
 }
 
 export interface Mechanic {

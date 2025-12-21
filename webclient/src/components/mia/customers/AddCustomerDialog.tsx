@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAddCustomerMutation } from "@/hooks/customer/useCustomer";
+import { v4 as uuidv4 } from "uuid";
 
 interface AddCustomerDialogProps {
     open: boolean;
@@ -56,13 +57,23 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
                 <div className="space-y-4 mt-4">
                     <div>
                         <Label htmlFor="user_id">User ID *</Label>
-                        <Input
-                            id="user_id"
-                            placeholder="e.g., USR-001"
-                            className="mt-1.5"
-                            value={formData.id}
-                            onChange={(e) => setFormData({ ...formData, id: e.target.value })}
-                        />
+                        <div className="mt-1.5 flex gap-2 items-center">
+                            <Input
+                                id="user_id"
+                                placeholder="e.g., USR-001 or generated UUID"
+                                className="flex-1"
+                                value={formData.id}
+                                onChange={(e) => setFormData({ ...formData, id: e.target.value })}
+                            />
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setFormData({ ...formData, id: uuidv4() })}
+                                title="Generate UUID"
+                            >
+                                Generate
+                            </Button>
+                        </div>
                     </div>
                     <div>
                         <Label htmlFor="name">Full Name *</Label>
