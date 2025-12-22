@@ -1,8 +1,8 @@
 from fastapi import Depends
 from app.core.database import get_session
-from sqlmodel import Session, select
+from sqlmodel import Session, select, delete
 from typing import Optional, List
-from app.model.sql_models.mia import Customer, Vehicle
+from app.model.sql_models.mia import Customer, Vehicle, ServiceJob
 from app.core.errors import ConflictError
 from app.constants.common import MAX_SEARCH_RESULTS
 
@@ -93,9 +93,8 @@ class CustomerService:
             return False
 
         try:
-            vehicles = list(self.session.exec(select(Vehicle).where(Vehicle.customer_id == customer_id)).all())
-            for v in vehicles:
-                self.session.delete(v)
+            self.session.exec(delete(ServiceJob).where(ServiceJob.customer_id == customer_id))
+            self.session.exec(delete(Vehicle).where(Vehicle.customer_id == customer_id))
             self.session.delete(customer)
             self.session.commit()
             return True
