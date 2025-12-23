@@ -56,7 +56,7 @@ class PartInventory(SQLModel, table=True):
     name: str
     description: Optional[str] = None
     stock_quantity: int = Field(default=0, ge=0)
-    unit_price: float
+    unit_price: float = Field(ge=0)
     compatible_models: List[str] = Field(default_factory=list, sa_type=JSONB)
     
 class ServicePart(SQLModel, table=True):
@@ -64,6 +64,6 @@ class ServicePart(SQLModel, table=True):
     job_id: str = Field(foreign_key="servicejob.id")
     inventory_part_id: Optional[str] = Field(foreign_key="partinventory.id")
     name: str
-    quantity: int = 1
-    unit_price: float
+    quantity: int = Field(default=1, ge=1)
+    unit_price: float = Field(ge=0)
     availability_status: PartAvailabilityStatus = Field(default=PartAvailabilityStatus.available)
