@@ -1,4 +1,7 @@
+from enum import Enum
 from sqlmodel import SQLModel, Field
+from sqlalchemy.dialects.postgresql import JSONB
+from typing import List
 from typing import Optional
 from datetime import datetime
 from uuid import uuid4
@@ -32,6 +35,12 @@ class Mechanic(SQLModel, table=True):
     mechanic_code: str
 
 
+class PartAvailabilityStatus(str, Enum):
+    available = "available"
+    unavailable = "unavailable"
+    partial = "partial"
+
+
 class ServiceJob(SQLModel, table=True):
     id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
     customer_id: str = Field(foreign_key="customer.id", index=True)
@@ -41,3 +50,23 @@ class ServiceJob(SQLModel, table=True):
     notes: str
     validated_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PartInventory(SQLModel, table=True):
+    id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
+    part_code: str = Field(index=True, unique=True)
+    name: str
+    description: Optional[str] = None
+    stock_quantity: int = Field(default=0, ge=0)
+    unit_price: float = Field(ge=0)
+    compatible_models: List[str] = Field(default_factory=list, sa_type=JSONB)
+
+
+class ServicePart(SQLModel, table=True):
+    id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
+    job_id: str = Field(foreign_key="servicejob.id")
+    inventory_part_id: Optional[str] = Field(foreign_key="partinventory.id")
+    name: str
+    quantity: int = Field(default=1, ge=1)
+    unit_price: float = Field(ge=0)
+    availability_status: PartAvailabilityStatus = Field(default=PartAvailabilityStatus.available)
