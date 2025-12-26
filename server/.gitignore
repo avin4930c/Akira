@@ -63,3 +63,6 @@ Dockerfile.*
 # OS-specific
 .DS_Store
 Thumbs.db
+
+# Credentials and keys
+/creds/
