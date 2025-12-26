@@ -13,6 +13,18 @@ class GeminiEmbeddingClient(BaseEmbeddingClient):
         if self._client:
             return self._client
 
+        if not settings.VERTEX_SERVICE_ACCOUNT_JSON_PATH:
+            raise RuntimeError(
+                "VERTEX_SERVICE_ACCOUNT_JSON_PATH is not configured. "
+                "Please set this environment variable to the path of your GCP service account JSON file."
+            )
+        
+        if not settings.GCP_PROJECT_ID:
+            raise RuntimeError(
+                "GCP_PROJECT_ID is not configured. "
+                "Please set this environment variable to your Google Cloud project ID."
+            )
+
         try:
             creds = service_account.Credentials.from_service_account_file(
                 settings.VERTEX_SERVICE_ACCOUNT_JSON_PATH
@@ -22,6 +34,11 @@ class GeminiEmbeddingClient(BaseEmbeddingClient):
                 vertexai=True,
                 project=settings.GCP_PROJECT_ID,
                 credentials=creds,
+            )
+        except FileNotFoundError:
+            raise RuntimeError(
+                f"Service account file not found at: {settings.VERTEX_SERVICE_ACCOUNT_JSON_PATH}. "
+                "Please verify the path is correct."
             )
         except Exception as e:
             log.error(f"Error initializing Gemini Embedding client: {e}")

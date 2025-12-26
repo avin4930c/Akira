@@ -3,6 +3,8 @@ from typing import Optional
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column
 
+from app.constants.rag import EMBEDDING_DIMENSION
+
 
 class RagChunk(SQLModel, table=True):
     """
@@ -17,4 +19,4 @@ class RagChunk(SQLModel, table=True):
     section: Optional[str] = Field(default=None, index=True)
     chunk_index: int = Field(default=0)
     content: str
-    embedding: list[float] = Field(sa_column=Column(Vector(3072)))
+    embedding: list[float] = Field(sa_column=Column(Vector(EMBEDDING_DIMENSION)))

@@ -8,7 +8,7 @@ from enum import Enum
 import tiktoken
 from fastapi import Depends
 from pypdf import PdfReader
-from sqlalchemy import text
+from sqlalchemy import delete
 from sqlmodel import Session, select
 
 from app.core.database import get_session
@@ -16,6 +16,15 @@ from app.model.sql_models.rag import RagChunk
 from app.clients.embedding_clients.base_embedding_client import BaseEmbeddingClient
 from app.clients.embedding_clients.gemini_embedding_client import get_gemini_embedding_client
 from app.config.logger_config import setup_logger
+from app.utils.db_utils import escape_like_pattern
+from app.constants.rag import (
+    DEFAULT_CHUNK_SIZE,
+    DEFAULT_CHUNK_OVERLAP,
+    DEFAULT_TOKEN_ENCODING,
+    EMBEDDING_BATCH_SIZE,
+    EMBEDDING_MAX_RETRIES,
+    EMBEDDING_BATCH_DELAY,
+)
 
 log = setup_logger(__name__)
 
@@ -51,9 +60,9 @@ class TextChunker:
     
     def __init__(
         self,
-        chunk_size: int = 512,
-        chunk_overlap: int = 50,
-        encoding_name: str = "cl100k_base",
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
+        encoding_name: str = DEFAULT_TOKEN_ENCODING,
     ):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
@@ -261,13 +270,13 @@ class TextChunker:
             )
 
 
-class RAGService:    
+class RAGService:
     def __init__(
         self,
         session: Session,
         embedding_provider: BaseEmbeddingClient,
-        chunk_size: int = 512,
-        chunk_overlap: int = 50,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
         chunking_strategy: ChunkingStrategy = ChunkingStrategy.TOKEN,
     ):
         self.session = session
@@ -281,6 +290,7 @@ class RAGService:
         log.info(f"RAGService initialized with {chunking_strategy.value} chunking")
     
     def _chunk_text(self, text: str) -> List[tuple[str, ChunkMetadata]]:
+        """Split text into chunks based on the configured chunking strategy."""
         if self.chunking_strategy == ChunkingStrategy.TOKEN:
             return self.chunker.chunk_by_tokens(text)
         elif self.chunking_strategy == ChunkingStrategy.RECURSIVE:
@@ -289,6 +299,7 @@ class RAGService:
             return self.chunker.chunk_by_tokens(text)
     
     def _extract_pdf_text(self, pdf_bytes: bytes) -> str:
+        """Extract text content from PDF bytes, removing NUL characters."""
         reader = PdfReader(io.BytesIO(pdf_bytes))
         pages_text = []
         
@@ -300,7 +311,7 @@ class RAGService:
         
         return "\n\n".join(pages_text)
     
-    def _embed_batch(self, texts: List[str], batch_size: int = 10) -> List[List[float]]:
+    def _embed_batch(self, texts: List[str], batch_size: int = EMBEDDING_BATCH_SIZE) -> List[List[float]]:
         all_embeddings = []
         total_batches = (len(texts) - 1) // batch_size + 1
         
@@ -309,15 +320,14 @@ class RAGService:
             current_batch_num = i // batch_size + 1
             
             # Simple retry logic for rate limits
-            max_retries = 3
-            for attempt in range(max_retries):
+            for attempt in range(EMBEDDING_MAX_RETRIES):
                 try:
                     embeddings = self.embedding_client.embed_documents(batch)
                     all_embeddings.extend(embeddings)
                     break
                 except Exception as e:
                     if "429" in str(e) or "quota" in str(e).lower():
-                        if attempt < max_retries - 1:
+                        if attempt < EMBEDDING_MAX_RETRIES - 1:
                             wait_time = (attempt + 1) * 2
                             log.warning(f"Rate limit hit. Retrying batch {current_batch_num}/{total_batches} in {wait_time}s...")
                             time.sleep(wait_time)
@@ -326,7 +336,7 @@ class RAGService:
                     raise e
             
             if i + batch_size < len(texts):
-                time.sleep(0.5)
+                time.sleep(EMBEDDING_BATCH_DELAY)
                 
         return all_embeddings
     
@@ -350,18 +360,24 @@ class RAGService:
         chunk_texts = [chunk for chunk, _ in chunks_with_metadata]
         vectors = self._embed_batch(chunk_texts)
         
-        for (content, metadata), vec in zip(chunks_with_metadata, vectors):
-            chunk_record = RagChunk(
-                source=source,
-                vehicle_model=vehicle_model,
-                section=section,
-                chunk_index=metadata.chunk_index,
-                content=content,
-                embedding=vec
-            )
-            self.session.add(chunk_record)
+        try:
+            for (content, metadata), vec in zip(chunks_with_metadata, vectors):
+                chunk_record = RagChunk(
+                    source=source,
+                    vehicle_model=vehicle_model,
+                    section=section,
+                    chunk_index=metadata.chunk_index,
+                    content=content,
+                    embedding=vec
+                )
+                self.session.add(chunk_record)
+            
+            self.session.commit()
+        except Exception as e:
+            self.session.rollback()
+            log.error(f"Failed to commit chunks to database: {e}")
+            raise ValueError(f"Database commit failed: {str(e)}")
         
-        self.session.commit()
         log.info(f"Ingested {len(chunks_with_metadata)} chunks from {source}")
         
         return {
@@ -389,18 +405,24 @@ class RAGService:
         chunk_texts = [chunk for chunk, _ in chunks_with_metadata]
         vectors = self._embed_batch(chunk_texts)
         
-        for (content, metadata), vec in zip(chunks_with_metadata, vectors):
-            chunk_record = RagChunk(
-                source=source,
-                vehicle_model=vehicle_model,
-                section=section,
-                chunk_index=metadata.chunk_index,
-                content=content,
-                embedding=vec
-            )
-            self.session.add(chunk_record)
+        try:
+            for (content, metadata), vec in zip(chunks_with_metadata, vectors):
+                chunk_record = RagChunk(
+                    source=source,
+                    vehicle_model=vehicle_model,
+                    section=section,
+                    chunk_index=metadata.chunk_index,
+                    content=content,
+                    embedding=vec
+                )
+                self.session.add(chunk_record)
+            
+            self.session.commit()
+        except Exception as e:
+            self.session.rollback()
+            log.error(f"Failed to commit text chunks to database: {e}")
+            raise ValueError(f"Database commit failed: {str(e)}")
         
-        self.session.commit()
         log.info(f"Ingested {len(chunks_with_metadata)} chunks from {source}")
         
         return {
@@ -426,10 +448,12 @@ class RAGService:
         statement = select(RagChunk, score_expr.label("score"))
         
         if vehicle_model:
-            statement = statement.where(RagChunk.vehicle_model.ilike(f"%{vehicle_model}%"))
+            escaped_model = escape_like_pattern(vehicle_model)
+            statement = statement.where(RagChunk.vehicle_model.ilike(f"%{escaped_model}%"))
         
         if section:
-            statement = statement.where(RagChunk.section.ilike(f"%{section}%"))
+            escaped_section = escape_like_pattern(section)
+            statement = statement.where(RagChunk.section.ilike(f"%{escaped_section}%"))
         
         if score_threshold is not None:
             statement = statement.where(score_expr >= score_threshold)
@@ -458,12 +482,14 @@ class RAGService:
         section: Optional[str] = None,
         top_k: int = 5,
         context_window: int = 1,
+        score_threshold: Optional[float] = None,
     ) -> List[RetrievedChunk]:
         main_chunks = self.retrieve(
             query=query,
             vehicle_model=vehicle_model,
             section=section,
             top_k=top_k,
+            score_threshold=score_threshold,
         )
         
         if not main_chunks or context_window == 0:
@@ -504,40 +530,48 @@ class RAGService:
         return sorted_chunks
     
     def delete_by_source(self, source: str) -> int:
-        statement = select(RagChunk).where(RagChunk.source == source)
-        results = self.session.exec(statement).all()
+        count_stmt = select(RagChunk).where(RagChunk.source == source)
+        count = len(self.session.exec(count_stmt).all())
         
-        for chunk in results:
-            self.session.delete(chunk)
-            
+        delete_stmt = delete(RagChunk).where(RagChunk.source == source)
+        self.session.execute(delete_stmt)
         self.session.commit()
         
-        deleted = len(results)
-        log.info(f"Deleted {deleted} chunks from source: {source}")
-        return deleted
+        log.info(f"Deleted {count} chunks from source: {source}")
+        return count
     
-    def get_sources(self) -> List[dict]:
-        sql = text("""
-            SELECT 
-                source,
-                vehicle_model,
-                section,
-                COUNT(*) as chunk_count,
-                MIN(chunk_index) as min_chunk,
-                MAX(chunk_index) as max_chunk
-            FROM rag_chunks
-            GROUP BY source, vehicle_model, section
-            ORDER BY source
-        """)
+    def list_sources(
+        self,
+        vehicle_model: Optional[str] = None,
+        section: Optional[str] = None,
+    ) -> List[dict]:
+        """List ingested sources with optional filtering by vehicle_model or section."""
+        statement = (
+            select(
+                RagChunk.source,
+                RagChunk.vehicle_model,
+                RagChunk.section,
+            )
+            .distinct()
+        )
         
-        rows = self.session.execute(sql).fetchall()
+        if vehicle_model:
+            escaped_model = escape_like_pattern(vehicle_model)
+            statement = statement.where(RagChunk.vehicle_model.ilike(f"%{escaped_model}%"))
+        
+        if section:
+            escaped_section = escape_like_pattern(section)
+            statement = statement.where(RagChunk.section.ilike(f"%{escaped_section}%"))
+        
+        statement = statement.order_by(RagChunk.source)
+        
+        rows = self.session.exec(statement).all()
         
         return [
             {
                 "source": r.source,
                 "vehicle_model": r.vehicle_model,
                 "section": r.section,
-                "chunk_count": r.chunk_count,
             }
             for r in rows
         ]
@@ -549,7 +583,7 @@ def get_rag_service(
     return RAGService(
         session=session,
         embedding_provider=embedding_provider,
-        chunk_size=512,
-        chunk_overlap=50,
+        chunk_size=DEFAULT_CHUNK_SIZE,
+        chunk_overlap=DEFAULT_CHUNK_OVERLAP,
         chunking_strategy=ChunkingStrategy.TOKEN,
     )
