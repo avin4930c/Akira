@@ -8,6 +8,7 @@ from app.middleware.rate_limiter import EXEMPT_PATTERNS, RateLimiterMiddleware, 
 from app.api.v1.chat_router import chat_router
 from app.api.v1.customer_router import customer_router
 from app.api.v1.vehicle_router import vehicle_router
+from app.api.v1.rag_router import rag_router
 from app.middleware.clerk_auth_middleware import ClerkAuthenticationMiddleware
 
 app = FastAPI(lifespan=lifespan)
@@ -28,6 +29,7 @@ app.add_middleware(
 app.include_router(chat_router, prefix="/chat", tags=["chat"])
 app.include_router(customer_router, prefix="/customer", tags=["customer"])
 app.include_router(vehicle_router, prefix="/vehicle", tags=["vehicle"])
+app.include_router(rag_router, prefix="/rag", tags=["rag"])
 
 
 @app.get("/")

@@ -1,4 +1,6 @@
 from sqlmodel import SQLModel, create_engine, Session
+from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError
 from app.settings.settings import settings
 from app.config.logger_config import setup_logger
 
@@ -15,6 +17,18 @@ engine = create_engine(
 def init_db() -> None:
     try:
         logger.info(f"Creating database tables with name: {settings.DATABASE_URL.split('/')[-1]}")
+        
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+                conn.commit()
+                logger.info("PGVector extension enabled")
+        except ProgrammingError as e:
+            if "already exists" in str(e).lower() or "extension" in str(e).lower():
+                logger.info("PGVector extension already exists or was created by another instance")
+            else:
+                raise
+        
         SQLModel.metadata.create_all(engine)
         logger.info("Database tables created successfully")
     except Exception as e:

@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     LANGSMITH_TRACING: Optional[bool] = None
     CORS_ORIGINS: list[str] = [""]
     GEMINI_API_KEY: Optional[str] = None
+    GCP_PROJECT_ID: Optional[str] = None
+    VERTEX_SERVICE_ACCOUNT_JSON_PATH: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     CLERK_JWT_PUBLIC_KEY: Optional[str] = None
 
