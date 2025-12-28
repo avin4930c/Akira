@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from app.constants.enums.mia_enums import ServiceJobStatus
 from datetime import datetime
@@ -11,5 +11,5 @@ class ServiceJobRequest(BaseModel):
     status: ServiceJobStatus = ServiceJobStatus.pending
     service_info: str
     mechanic_notes: str
-    validated_at: Optional[datetime]
-    created_at: datetime = datetime.utcnow()
+    validated_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)

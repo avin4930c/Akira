@@ -33,9 +33,9 @@ class MiaWorkflow:
         self.rag_service = rag_service
 
     async def fetch_service_job_data(self, state: MiaWorkflowState) -> MiaWorkflowState:
-        vehicle_data = self.vehicle_service.get_vehicle(
+        vehicle_data = await self.vehicle_service.get_vehicle(
             state.service_job.vehicle_id)
-        customer_data = self.customer_service.get_customer(
+        customer_data = await self.customer_service.get_customer(
             state.service_job.customer_id)
 
         return {

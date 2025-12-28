@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from langgraph.graph.state import CompiledStateGraph
 
 from app.config.logger_config import setup_logger
-from app.workflows.mia_workflow import get_mia_workflow, MiaWorkflowState
+from app.workflows.mia_workflow import get_mia_workflow
 from app.model.request.mia import ServiceJobRequest
 from app.model.response.mia import ServiceJobResponse
 
