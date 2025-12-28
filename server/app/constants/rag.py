@@ -42,7 +42,7 @@ from app.settings.settings import settings
 EMBEDDING_DIMENSION: int = settings.LOCAL_EMBEDDING_DIMENSION if settings.USE_LOCAL_EMBEDDINGS else 3072
 
 # Batch size for embedding API calls
-EMBEDDING_BATCH_SIZE: int = 10
+EMBEDDING_BATCH_SIZE: int = 100
 
 # Maximum retries for rate-limited embedding requests
 EMBEDDING_MAX_RETRIES: int = 3

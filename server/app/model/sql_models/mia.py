@@ -47,7 +47,8 @@ class ServiceJob(SQLModel, table=True):
     vehicle_id: str = Field(foreign_key="vehicle.id", index=True)
     mechanic_id: str = Field(foreign_key="mechanic.id", index=True)
     status: ServiceJobStatus = Field(default=ServiceJobStatus.pending)
-    notes: str
+    service_info: str
+    mechanic_notes: str
     validated_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
