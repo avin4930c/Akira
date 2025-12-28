@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     CLERK_JWT_PUBLIC_KEY: Optional[str] = None
 
+    USE_LOCAL_EMBEDDINGS: bool = False
+    LOCAL_EMBEDDING_MODEL_NAME: str = "BAAI/bge-large-en-v1.5"
+    LOCAL_EMBEDDING_DEVICE: str = "cpu"
+    LOCAL_EMBEDDING_DIMENSION: int = 1024
+    LOCAL_EMBEDDING_INSTRUCTION: Optional[str] = "Represent this sentence for searching relevant passages: "
+
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_MAX_REQUESTS: int = 60
     RATE_LIMIT_WINDOW_SECONDS: int = 60

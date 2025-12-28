@@ -31,13 +31,15 @@ DEFAULT_CHUNK_OVERLAP: int = 50
 # Token encoding name for tiktoken
 DEFAULT_TOKEN_ENCODING: str = "cl100k_base"
 
+from app.settings.settings import settings
+
 # =============================================================================
 # Embedding Configuration
 # =============================================================================
 
-# Embedding vector dimension (Gemini embedding-001 uses 3072 dimensions)
-# Update this if switching to a different embedding model
-EMBEDDING_DIMENSION: int = 3072
+# Embedding vector dimension
+# Dynamically set based on configuration
+EMBEDDING_DIMENSION: int = settings.LOCAL_EMBEDDING_DIMENSION if settings.USE_LOCAL_EMBEDDINGS else 3072
 
 # Batch size for embedding API calls
 EMBEDDING_BATCH_SIZE: int = 10
