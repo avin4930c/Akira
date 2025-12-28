@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 
-class GetCustomerResponse(BaseModel):
+class CustomerResponse(BaseModel):
     id: str
     name: str
     phone: str

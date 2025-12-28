@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from app.config.logger_config import setup_logger
 from app.services.customer_service import CustomerService, get_customer_service
-from app.model.response.customer import GetCustomerResponse
+from app.model.response.customer import CustomerResponse
 from app.model.request.customer import SearchCustomerRequest
 from app.model.request.customer import CreateCustomerRequest, UpdateCustomerRequest
 from app.core.errors import ConflictError, ValidationError
@@ -10,15 +10,15 @@ from app.core.errors import ConflictError, ValidationError
 customer_router = APIRouter()
 log = setup_logger("customer_router")
 
-@customer_router.get("/", response_model=List[GetCustomerResponse])
+@customer_router.get("/", response_model=List[CustomerResponse])
 async def list_customers(
     customer_service: CustomerService = Depends(get_customer_service),
 ):
     customers = await customer_service.list_customers()
-    return [GetCustomerResponse.model_validate(c.model_dump()) for c in customers]
+    return [CustomerResponse.model_validate(c.model_dump()) for c in customers]
 
 
-@customer_router.get("/{customer_id}", response_model=GetCustomerResponse)
+@customer_router.get("/{customer_id}", response_model=CustomerResponse)
 async def get_customer(
     customer_id: str,
     customer_service: CustomerService = Depends(get_customer_service),
@@ -26,12 +26,12 @@ async def get_customer(
     customer = await customer_service.get_customer(customer_id)
     if not customer:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
-    return GetCustomerResponse.model_validate(customer.model_dump())
+    return CustomerResponse.model_validate(customer.model_dump())
 
 
 @customer_router.post(
     "/",
-    response_model=GetCustomerResponse,
+    response_model=CustomerResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def add_customer(
@@ -45,14 +45,14 @@ async def add_customer(
             email=payload.email,
             id=payload.id,
         )
-        return GetCustomerResponse.model_validate(customer.model_dump())
+        return CustomerResponse.model_validate(customer.model_dump())
     except ConflictError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@customer_router.put("/{customer_id}", response_model=GetCustomerResponse)
+@customer_router.put("/{customer_id}", response_model=CustomerResponse)
 async def update_customer(
     customer_id: str,
     payload: UpdateCustomerRequest,
@@ -68,7 +68,7 @@ async def update_customer(
         )
         if not customer:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
-        return GetCustomerResponse.model_validate(customer.model_dump())
+        return CustomerResponse.model_validate(customer.model_dump())
     except ConflictError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValidationError as e:
@@ -88,7 +88,7 @@ async def delete_customer(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@customer_router.post("/search", response_model=List[GetCustomerResponse])
+@customer_router.post("/search", response_model=List[CustomerResponse])
 async def search_customer(
     payload: SearchCustomerRequest,
     customer_service: CustomerService = Depends(get_customer_service),
@@ -98,4 +98,4 @@ async def search_customer(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="query is required")
 
     matches = await customer_service.search_customers(q)
-    return [GetCustomerResponse.model_validate(c.model_dump()) for c in matches]
+    return [CustomerResponse.model_validate(c.model_dump()) for c in matches]
