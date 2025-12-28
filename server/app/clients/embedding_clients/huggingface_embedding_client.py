@@ -7,10 +7,12 @@ from app.config.logger_config import setup_logger
 
 log = setup_logger(__name__)
 
+
 class GenericHuggingFaceEmbeddings(Embeddings):
     def __init__(self, model_name: str, device: str = "cpu", instruction: Optional[str] = None):
         from sentence_transformers import SentenceTransformer
-        self.model = SentenceTransformer(model_name, device=device, trust_remote_code=True)
+        self.model = SentenceTransformer(
+            model_name, device=device, trust_remote_code=True)
         self.instruction = instruction
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -20,9 +22,10 @@ class GenericHuggingFaceEmbeddings(Embeddings):
     def embed_query(self, text: str) -> List[float]:
         if self.instruction:
             text = f"{self.instruction}{text}"
-             
+
         embedding = self.model.encode(text, normalize_embeddings=True)
         return embedding.tolist()
+
 
 class HuggingFaceEmbeddingClient(BaseEmbeddingClient):
     _client: GenericHuggingFaceEmbeddings | None = None
@@ -38,7 +41,8 @@ class HuggingFaceEmbeddingClient(BaseEmbeddingClient):
                 return HuggingFaceEmbeddingClient._client
 
             try:
-                log.info(f"Initializing HF Embedding Client with model: {self.model_name} on {settings.LOCAL_EMBEDDING_DEVICE}")
+                log.info(
+                    f"Initializing HF Embedding Client with model: {self.model_name} on {settings.LOCAL_EMBEDDING_DEVICE}")
                 HuggingFaceEmbeddingClient._client = GenericHuggingFaceEmbeddings(
                     model_name=self.model_name,
                     device=settings.LOCAL_EMBEDDING_DEVICE,
@@ -48,9 +52,11 @@ class HuggingFaceEmbeddingClient(BaseEmbeddingClient):
                 log.info("HF Embedding Client initialized successfully")
             except Exception as e:
                 log.error(f"Error initializing HF Embedding client: {e}")
-                raise RuntimeError(f"Failed to initialize HF Embedding client: {e}")
+                raise RuntimeError(
+                    f"Failed to initialize HF Embedding client: {e}")
 
         return HuggingFaceEmbeddingClient._client
+
 
 def get_huggingface_embedding_client(model_name: str | None = None) -> HuggingFaceEmbeddingClient:
     name = model_name or settings.LOCAL_EMBEDDING_MODEL_NAME

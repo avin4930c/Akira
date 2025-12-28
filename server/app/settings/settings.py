@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     USE_LOCAL_EMBEDDINGS: bool = False
     LOCAL_EMBEDDING_MODEL_NAME: str = "BAAI/bge-large-en-v1.5"
-    LOCAL_EMBEDDING_DEVICE: str = "cuda"
+    LOCAL_EMBEDDING_DEVICE: str = "cpu"
     LOCAL_EMBEDDING_DIMENSION: int = 1024
     LOCAL_EMBEDDING_INSTRUCTION: Optional[str] = "Represent this sentence for searching relevant passages: "
 
