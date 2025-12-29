@@ -17,7 +17,9 @@ class TavilyWebSearchClient(BaseWebSearchClient):
             return self._client
 
         if not settings.TAVILY_API_KEY:
-            raise RuntimeError("TAVILY_API_KEY is not configured in settings")
+            raise RuntimeError(
+                "TAVILY_API_KEY is not configured. Please set this environment variable to your Tavily API key."
+                )
 
         try:
             self._client = AsyncTavilyClient(api_key=settings.TAVILY_API_KEY)
