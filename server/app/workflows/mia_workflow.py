@@ -5,10 +5,15 @@ from app.model.response.customer import CustomerResponse
 from app.model.response.vehicle import VehicleResponse
 from app.clients.llm_clients.base_llm_client import BaseLLMClient
 from app.clients.llm_clients.gemini_llm_client import get_gemini_llm_client
+from app.clients.web_search_clients.base_web_search_client import BaseWebSearchClient
+from app.clients.web_search_clients.tavily_client import get_tavily_client
 from app.services.vehicle_service import VehicleService, get_vehicle_service
 from app.services.customer_service import CustomerService, get_customer_service
 from app.services.rag_service import RAGService, get_rag_service
-from app.prompts.mia_prompts import MIA_RAG_QUERY_GENERATION_PROMPT
+from app.prompts.mia_prompts import (
+    MIA_RAG_QUERY_GENERATION_PROMPT,
+    MIA_WEB_SEARCH_QUERY_PROMPT,
+)
 
 
 class MiaWorkflowState(MessagesState):
@@ -26,11 +31,13 @@ class MiaWorkflow:
         vehicle_service: VehicleService,
         customer_service: CustomerService,
         rag_service: RAGService,
+        web_search_client: BaseWebSearchClient,
     ):
         self.llm = llm_provider.get_llm_client()
         self.vehicle_service = vehicle_service
         self.customer_service = customer_service
         self.rag_service = rag_service
+        self.web_search_client = web_search_client
 
     async def fetch_service_job_data(self, state: MiaWorkflowState) -> MiaWorkflowState:
         vehicle_data = await self.vehicle_service.get_vehicle(
@@ -64,12 +71,25 @@ class MiaWorkflow:
         }
 
     async def search_web(self, state: MiaWorkflowState) -> MiaWorkflowState:
-        query = f"Vehicle Model: {state.vehicle_data}\nCustomer Info: {state.customer_data}\nService Job Notes: {state.service_job.notes}"
-        # TODO: Add tavily web search funtionality
+        formatted_prompt = MIA_WEB_SEARCH_QUERY_PROMPT.format_messages(
+            year=state.vehicle_data.year,
+            make=state.vehicle_data.make,
+            model=state.vehicle_data.model,
+            service_info=state.service_job.service_info,
+            mechanic_notes=state.service_job.mechanic_notes,
+        )
+        response = await self.llm.ainvoke(formatted_prompt)
+        search_query = response.content if hasattr(response, "content") else str(response)
 
-        return {
-            "web_search_results": "context from web search"
-        }
+        results = await self.web_search_client.search(
+            query=search_query.strip(),
+            max_results=5,
+            search_depth="advanced",
+        )
+
+        web_context = self.web_search_client.format_results_as_context(results)
+
+        return {"web_search_results": web_context}
 
     async def mechanic_brain_planner(self, state: MiaWorkflowState):
         pass
@@ -102,10 +122,12 @@ def get_mia_workflow(
     customer_service: CustomerService = Depends(get_customer_service),
     vehicle_service: VehicleService = Depends(get_vehicle_service),
     rag_service: RAGService = Depends(get_rag_service),
+    web_search_client: BaseWebSearchClient = Depends(get_tavily_client),
 ):
     return MiaWorkflow(
         llm_provider=llm_provider,
         customer_service=customer_service,
         vehicle_service=vehicle_service,
-        rag_service=rag_service
+        rag_service=rag_service,
+        web_search_client=web_search_client,
     ).get_workflow()

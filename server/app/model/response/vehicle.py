@@ -10,6 +10,6 @@ class VehicleResponse(BaseModel):
     model: str
     year: int
     registration: str
-    mileage: int
+    mileage: int #TODO: consider this as context for getting more accurate responses based on wear and tear
     engine_type: str
     last_service_date: Optional[datetime] = None
