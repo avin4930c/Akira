@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     VERTEX_SERVICE_ACCOUNT_JSON_PATH: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     CLERK_JWT_PUBLIC_KEY: Optional[str] = None
+    TAVILY_API_KEY: Optional[str] = None
 
     USE_LOCAL_EMBEDDINGS: bool = False
     LOCAL_EMBEDDING_MODEL_NAME: str = "BAAI/bge-large-en-v1.5"
