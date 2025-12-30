@@ -1,8 +1,13 @@
+from typing import TypedDict, Optional
 from fastapi import Depends
-from langgraph.graph import START, END, StateGraph, MessagesState
+from langgraph.graph import START, END, StateGraph
 from app.model.request.mia import ServiceJobRequest
 from app.model.response.customer import CustomerResponse
 from app.model.response.vehicle import VehicleResponse
+from app.model.response.mia_plan import (
+    TechnicalPlanResponse,
+    EnrichedTechnicalPlan,
+)
 from app.clients.llm_clients.base_llm_client import BaseLLMClient
 from app.clients.llm_clients.gemini_llm_client import get_gemini_llm_client
 from app.clients.web_search_clients.base_web_search_client import BaseWebSearchClient
@@ -10,18 +15,22 @@ from app.clients.web_search_clients.tavily_client import get_tavily_client
 from app.services.vehicle_service import VehicleService, get_vehicle_service
 from app.services.customer_service import CustomerService, get_customer_service
 from app.services.rag_service import RAGService, get_rag_service
+from app.utils.rag_utils import format_rag_context
 from app.prompts.mia_prompts import (
     MIA_RAG_QUERY_GENERATION_PROMPT,
     MIA_WEB_SEARCH_QUERY_PROMPT,
+    MIA_TECHNICAL_PLAN_PROMPT,
 )
 
 
-class MiaWorkflowState(MessagesState):
+class MiaWorkflowState(TypedDict):
     service_job: ServiceJobRequest
-    vehicle_data: VehicleResponse = None
-    customer_data: CustomerResponse = None
-    rag_context: str = None
-    web_search_results: str = None
+    vehicle_data: Optional[VehicleResponse]
+    customer_data: Optional[CustomerResponse]
+    rag_context: Optional[str]
+    web_search_results: Optional[str]
+    technical_plan: Optional[TechnicalPlanResponse]
+    enriched_plan: Optional[EnrichedTechnicalPlan]
 
 
 class MiaWorkflow:
@@ -41,9 +50,9 @@ class MiaWorkflow:
 
     async def fetch_service_job_data(self, state: MiaWorkflowState) -> MiaWorkflowState:
         vehicle_data = await self.vehicle_service.get_vehicle(
-            state.service_job.vehicle_id)
+            state["service_job"].vehicle_id)
         customer_data = await self.customer_service.get_customer(
-            state.service_job.customer_id)
+            state["service_job"].customer_id)
 
         return {
             "vehicle_data": vehicle_data,
@@ -51,20 +60,22 @@ class MiaWorkflow:
         }
 
     async def retrieve_internal_knowledge(self, state: MiaWorkflowState) -> MiaWorkflowState:
-        vehicle_model = f"{state.vehicle_data.make} {state.vehicle_data.model}"
+        vehicle_model = f"{state['vehicle_data'].make} {state['vehicle_data'].model}"
         
         formatted_prompt = MIA_RAG_QUERY_GENERATION_PROMPT.format_messages(
-            service_info=state.service_job.service_info,
-            mechanic_notes=state.service_job.mechanic_notes
+            service_info=state["service_job"].service_info,
+            mechanic_notes=state["service_job"].mechanic_notes
         )
         response = await self.llm.ainvoke(formatted_prompt)
         search_query = response.content if hasattr(response, 'content') else str(response)
         
-        context = await self.rag_service.retrieve(
+        chunks = self.rag_service.retrieve(
             query=search_query.strip(),
             vehicle_model=vehicle_model,
             top_k=5,
         )
+
+        context = format_rag_context(chunks)
 
         return {
             "rag_context": context
@@ -72,11 +83,11 @@ class MiaWorkflow:
 
     async def search_web(self, state: MiaWorkflowState) -> MiaWorkflowState:
         formatted_prompt = MIA_WEB_SEARCH_QUERY_PROMPT.format_messages(
-            year=state.vehicle_data.year,
-            make=state.vehicle_data.make,
-            model=state.vehicle_data.model,
-            service_info=state.service_job.service_info,
-            mechanic_notes=state.service_job.mechanic_notes,
+            year=state["vehicle_data"].year,
+            make=state["vehicle_data"].make,
+            model=state["vehicle_data"].model,
+            service_info=state["service_job"].service_info,
+            mechanic_notes=state["service_job"].mechanic_notes,
         )
         response = await self.llm.ainvoke(formatted_prompt)
         search_query = response.content if hasattr(response, "content") else str(response)
@@ -91,10 +102,34 @@ class MiaWorkflow:
 
         return {"web_search_results": web_context}
 
-    async def mechanic_brain_planner(self, state: MiaWorkflowState):
-        pass
+    async def generate_technical_plan(self, state: MiaWorkflowState) -> MiaWorkflowState:
+        """Generate a structured technical service plan using LLM with all gathered context."""
+        formatted_prompt = MIA_TECHNICAL_PLAN_PROMPT.format_messages(
+            customer_data=state["customer_data"].model_dump_json(indent=2),
+            vehicle_data=state["vehicle_data"].model_dump_json(indent=2),
+            service_info=state["service_job"].service_info,
+            mechanic_notes=state["service_job"].mechanic_notes,
+            rag_context=state["rag_context"] or "No internal documentation found.",
+            web_search_results=state["web_search_results"] or "No external resources found.",
+        )
 
-    async def inventory_lookup(self, state: MiaWorkflowState):
+        structured_llm = self.llm.with_structured_output(TechnicalPlanResponse)
+        technical_plan = await structured_llm.ainvoke(formatted_prompt)
+
+        return {"technical_plan": technical_plan}
+
+    async def inventory_lookup(self, state: MiaWorkflowState) -> MiaWorkflowState:
+        """Look up suggested parts in inventory and enrich the technical plan.
+        
+        TODO: Implement inventory lookup logic:
+        1. Extract suggested_parts from state.technical_plan
+        2. For each part, search PartInventory by name (fuzzy match) and compatible_models
+        3. Check stock_quantity vs requested quantity
+        4. Build PartAvailabilityResult for each part
+        5. Calculate total_parts_cost and all_parts_available flag
+        6. Return EnrichedTechnicalPlan
+        """
+        # Placeholder - to be implemented with inventory service
         pass
 
     def get_workflow(self) -> StateGraph:
@@ -103,17 +138,17 @@ class MiaWorkflow:
         builder.add_node("retrieve_internal_knowledge",
                          self.retrieve_internal_knowledge)
         builder.add_node("search_web", self.search_web)
-        builder.add_node("mechanic_brain_planner", self.mechanic_brain_planner)
+        builder.add_node("generate_technical_plan", self.generate_technical_plan)
         builder.add_node("inventory_lookup", self.inventory_lookup)
 
         builder.add_edge(START, "service_job_data")
         builder.add_edge("service_job_data", "retrieve_internal_knowledge")
         builder.add_edge("service_job_data", "search_web")
-        builder.add_edge("retrieve_internal_knowledge", "mechanic_brain_planner")
-        builder.add_edge("search_web", "mechanic_brain_planner")
-        builder.add_edge("mechanic_brain_planner", "inventory_lookup")
+        builder.add_edge("retrieve_internal_knowledge", "generate_technical_plan")
+        builder.add_edge("search_web", "generate_technical_plan")
+        builder.add_edge("generate_technical_plan", "inventory_lookup")
         builder.add_edge("inventory_lookup", END)
-        
+
         return builder.compile()
 
 
