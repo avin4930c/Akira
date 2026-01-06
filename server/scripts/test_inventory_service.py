@@ -19,7 +19,7 @@ def _build_plan(part_names: List[str], *, quantity: int) -> TechnicalPlanRespons
     suggested_parts = [
         SuggestedPart(
             name=name,
-            description=None,
+            description="",
             quantity=max(1, quantity),
         )
         for name in part_names

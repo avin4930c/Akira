@@ -91,6 +91,14 @@ class MatchedInventoryPart(BaseModel):
     compatible_models: List[str] = Field(default_factory=list)
 
 
+class AlternativePart(MatchedInventoryPart):
+    """Alternative part with confidence score."""
+
+    match_confidence: float = Field(
+        ge=0.0, le=1.0, description="How well this alternative matches (0-1)"
+    )
+
+
 class PartAvailabilityResult(BaseModel):
     suggested_part: SuggestedPart = Field(
         description="The original part suggestion from LLM"
@@ -115,9 +123,9 @@ class PartAvailabilityResult(BaseModel):
     total_price: Optional[float] = Field(
         default=None, ge=0, description="Total price (unit_price * quantity_requested)"
     )
-    alternatives: List[MatchedInventoryPart] = Field(
+    alternatives: List[AlternativePart] = Field(
         default_factory=list,
-        description="Alternative compatible parts if primary is unavailable",
+        description="Alternative compatible parts with confidence scores",
     )
 
 

@@ -20,6 +20,7 @@ from app.constants.inventory import (
 )
 from app.core.database import get_session
 from app.model.response.mia_plan import (
+    AlternativePart,
     EnrichedTechnicalPlan,
     MatchedInventoryPart,
     PartAvailabilityResult,
@@ -177,7 +178,13 @@ class InventoryService:
                     availability_status=status,
                     unit_price=unit_price,
                     total_price=total_price,
-                    alternatives=[self._to_matched_inventory_part(a.part) for a in alternatives],
+                    alternatives=[
+                        AlternativePart(
+                            **self._to_matched_inventory_part(a.part).model_dump(),
+                            match_confidence=float(a.final_score),
+                        )
+                        for a in alternatives
+                    ],
                 )
             )
 
