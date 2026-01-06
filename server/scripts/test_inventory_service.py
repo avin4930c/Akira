@@ -39,8 +39,14 @@ def _build_plan(part_names: List[str], *, quantity: int) -> TechnicalPlanRespons
 
 
 async def run_once(*, parts: List[str], quantity: int, vehicle_model: str | None) -> None:
-    session = next(get_session())
     embedding_provider = get_huggingface_embedding_client()
+    
+    session_gen = get_session()
+    try:
+        session = next(session_gen)
+    except StopIteration:
+        print("Error: Could not obtain database session")
+        return
 
     try:
         service = InventoryService(

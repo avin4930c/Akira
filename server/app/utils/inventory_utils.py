@@ -4,6 +4,7 @@ from typing import Iterable, Optional
 from sqlalchemy import cast, String
 from app.model.sql_models.mia import PartInventory
 from app.utils.db_utils import escape_like_pattern
+from app.constants.inventory import MIN_TOKEN_LENGTH_FOR_MATCH, MAX_VEHICLE_SEARCH_TOKENS
 
 
 _WORD_RE = re.compile(r"[a-z0-9]+")
@@ -41,7 +42,10 @@ def is_vehicle_compatible(
             return True
 
         if vm_tokens and model_tokens:
-            significant_overlap = {t for t in (vm_tokens & model_tokens) if len(t) > 3}
+            significant_overlap = {
+                t for t in (vm_tokens & model_tokens) 
+                if len(t) > MIN_TOKEN_LENGTH_FOR_MATCH
+            }
             if significant_overlap:
                 return True
 
@@ -53,12 +57,12 @@ def build_vehicle_filter_clauses(vehicle_model: str) -> list:
     if not vm_normalized:
         return []
 
-    tokens = [t for t in vm_normalized.split() if len(t) >= 3]
+    tokens = [t for t in vm_normalized.split() if len(t) >= MIN_TOKEN_LENGTH_FOR_MATCH]
     if not tokens:
         return []
 
     clauses = []
-    for token in tokens[:3]:
+    for token in tokens[:MAX_VEHICLE_SEARCH_TOKENS]:
         pattern = f"%{escape_like_pattern(token)}%"
         clauses.append(
             cast(PartInventory.compatible_models, String).ilike(pattern, escape="\\")

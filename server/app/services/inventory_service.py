@@ -11,6 +11,9 @@ from app.clients.embedding_clients.huggingface_embedding_client import (
     get_huggingface_embedding_client,
 )
 from app.constants.inventory import (
+    MAX_ALTERNATIVES,
+    MAX_UNMATCHED_CANDIDATES,
+    MIN_ALTERNATIVE_SIMILARITY_RATIO,
     MIN_SIMILARITY_THRESHOLD,
     VEHICLE_COMPATIBILITY_BOOST,
     VECTOR_SEARCH_LIMIT,
@@ -106,16 +109,16 @@ class InventoryService:
 
         best = scored[0] if scored else None
         if best and best.final_score < MIN_SIMILARITY_THRESHOLD:
-            return None, scored[:5]
+            return None, scored[:MAX_UNMATCHED_CANDIDATES]
 
         alternatives = []
         seen_codes = {best.part.part_code} if best else set()
         for cand in scored[1:]:
-            if cand.part.part_code in seen_codes or cand.final_score < MIN_SIMILARITY_THRESHOLD * 0.85:
+            if cand.part.part_code in seen_codes or cand.final_score < MIN_SIMILARITY_THRESHOLD * MIN_ALTERNATIVE_SIMILARITY_RATIO:
                 continue
             seen_codes.add(cand.part.part_code)
             alternatives.append(cand)
-            if len(alternatives) >= 3:
+            if len(alternatives) >= MAX_ALTERNATIVES:
                 break
 
         return best, alternatives

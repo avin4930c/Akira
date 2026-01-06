@@ -105,7 +105,7 @@ class MiaWorkflow:
 
         return {"web_search_results": web_context}
 
-    async def generate_technical_plan(self, state: MiaWorkflowState) -> MiaWorkflowState:        
+    async def generate_technical_plan(self, state: MiaWorkflowState) -> MiaWorkflowState:
         formatted_prompt = MIA_TECHNICAL_PLAN_PROMPT.format_messages(
             customer_data=state["customer_data"].model_dump_json(indent=2),
             vehicle_data=state["vehicle_data"].model_dump_json(indent=2),
