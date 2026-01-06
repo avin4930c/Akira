@@ -5,13 +5,13 @@ from langgraph.graph.state import CompiledStateGraph
 from app.config.logger_config import setup_logger
 from app.workflows.mia_workflow import get_mia_workflow
 from app.model.request.mia import ServiceJobRequest
-from app.model.response.mia_plan import TechnicalPlanResponse
+from app.model.response.mia_plan import EnrichedTechnicalPlan
 
 mia_router = APIRouter()
 log = setup_logger(__name__)
 
 
-@mia_router.post("/process", response_model=Optional[TechnicalPlanResponse])
+@mia_router.post("/process", response_model=Optional[EnrichedTechnicalPlan])
 async def process_service_job(
     request: ServiceJobRequest,
     workflow: CompiledStateGraph = Depends(get_mia_workflow),
@@ -21,7 +21,7 @@ async def process_service_job(
             "service_job": request,
         })
         
-        return result_state.get("technical_plan")
+        return result_state.get("enriched_plan")
     except Exception as e:
         log.error(f"Error processing service job: {e}")
         raise HTTPException(
