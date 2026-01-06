@@ -15,6 +15,7 @@ from app.clients.web_search_clients.tavily_client import get_tavily_client
 from app.services.vehicle_service import VehicleService, get_vehicle_service
 from app.services.customer_service import CustomerService, get_customer_service
 from app.services.rag_service import RAGService, get_rag_service
+from app.services.inventory_service import InventoryService, get_inventory_service
 from app.utils.rag_utils import format_rag_context
 from app.prompts.mia_prompts import (
     MIA_RAG_QUERY_GENERATION_PROMPT,
@@ -40,12 +41,14 @@ class MiaWorkflow:
         vehicle_service: VehicleService,
         customer_service: CustomerService,
         rag_service: RAGService,
+        inventory_service: InventoryService,
         web_search_client: BaseWebSearchClient,
     ):
         self.llm = llm_provider.get_llm_client()
         self.vehicle_service = vehicle_service
         self.customer_service = customer_service
         self.rag_service = rag_service
+        self.inventory_service = inventory_service
         self.web_search_client = web_search_client
 
     async def fetch_service_job_data(self, state: MiaWorkflowState) -> MiaWorkflowState:
@@ -103,7 +106,6 @@ class MiaWorkflow:
         return {"web_search_results": web_context}
 
     async def generate_technical_plan(self, state: MiaWorkflowState) -> MiaWorkflowState:
-        """Generate a structured technical service plan using LLM with all gathered context."""
         formatted_prompt = MIA_TECHNICAL_PLAN_PROMPT.format_messages(
             customer_data=state["customer_data"].model_dump_json(indent=2),
             vehicle_data=state["vehicle_data"].model_dump_json(indent=2),
@@ -119,18 +121,23 @@ class MiaWorkflow:
         return {"technical_plan": technical_plan}
 
     async def inventory_lookup(self, state: MiaWorkflowState) -> MiaWorkflowState:
-        """Look up suggested parts in inventory and enrich the technical plan.
+        """Look up suggested parts in inventory and enrich the technical plan."""
         
-        TODO: Implement inventory lookup logic:
-        1. Extract suggested_parts from state.technical_plan
-        2. For each part, search PartInventory by name (fuzzy match) and compatible_models
-        3. Check stock_quantity vs requested quantity
-        4. Build PartAvailabilityResult for each part
-        5. Calculate total_parts_cost and all_parts_available flag
-        6. Return EnrichedTechnicalPlan
-        """
-        # Placeholder - to be implemented with inventory service
-        pass
+        technical_plan = state.get("technical_plan")
+        if not technical_plan:
+            return {"enriched_plan": None}
+
+        vehicle_data = state.get("vehicle_data")
+        vehicle_model = None
+        if vehicle_data:
+            vehicle_model = f"{vehicle_data.make} {vehicle_data.model}"
+
+        enriched = await self.inventory_service.enrich_technical_plan(
+            technical_plan=technical_plan,
+            vehicle_model=vehicle_model,
+        )
+
+        return {"enriched_plan": enriched}
 
     def get_workflow(self) -> StateGraph:
         builder = StateGraph(MiaWorkflowState)
@@ -157,6 +164,7 @@ def get_mia_workflow(
     customer_service: CustomerService = Depends(get_customer_service),
     vehicle_service: VehicleService = Depends(get_vehicle_service),
     rag_service: RAGService = Depends(get_rag_service),
+    inventory_service: InventoryService = Depends(get_inventory_service),
     web_search_client: BaseWebSearchClient = Depends(get_tavily_client),
 ):
     return MiaWorkflow(
@@ -164,5 +172,6 @@ def get_mia_workflow(
         customer_service=customer_service,
         vehicle_service=vehicle_service,
         rag_service=rag_service,
+        inventory_service=inventory_service,
         web_search_client=web_search_client,
     ).get_workflow()

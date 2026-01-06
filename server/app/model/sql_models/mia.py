@@ -1,11 +1,14 @@
 from enum import Enum
 from sqlmodel import SQLModel, Field
+from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import JSONB
+from pgvector.sqlalchemy import Vector
 from typing import List
 from typing import Optional
 from datetime import datetime
 from uuid import uuid4
 from app.constants.enums.mia_enums import ServiceJobStatus
+from app.constants.rag import EMBEDDING_DIMENSION
 
 
 class Customer(SQLModel, table=True):
@@ -61,13 +64,7 @@ class PartInventory(SQLModel, table=True):
     stock_quantity: int = Field(default=0, ge=0)
     unit_price: float = Field(ge=0)
     compatible_models: List[str] = Field(default_factory=list, sa_type=JSONB)
-
-
-class ServicePart(SQLModel, table=True):
-    id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
-    job_id: str = Field(foreign_key="servicejob.id")
-    inventory_part_id: Optional[str] = Field(foreign_key="partinventory.id")
-    name: str
-    quantity: int = Field(default=1, ge=1)
-    unit_price: float = Field(ge=0)
-    availability_status: PartAvailabilityStatus = Field(default=PartAvailabilityStatus.available)
+    embedding: Optional[List[float]] = Field(
+        default=None,
+        sa_column=Column(Vector(EMBEDDING_DIMENSION)),
+    )

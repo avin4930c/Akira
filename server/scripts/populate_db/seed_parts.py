@@ -6,10 +6,72 @@ current_dir = Path(__file__).resolve().parent
 server_dir = current_dir.parent.parent
 sys.path.append(str(server_dir))
 
-from sqlmodel import Session
+from sqlmodel import Session, SQLModel
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import text
 from app.core.database import engine
 from app.model.sql_models.mia import PartInventory
+from app.clients.embedding_clients.huggingface_embedding_client import (
+    get_huggingface_embedding_client,
+)
+from app.config.logger_config import setup_logger
+
+log = setup_logger(__name__)
+
+
+def ensure_tables_exist():
+    """Create the PartInventory table and enable pgvector extension if needed."""
+    with engine.begin() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+    
+    SQLModel.metadata.create_all(engine, tables=[PartInventory.__table__])
+    log.info("Ensured PartInventory table exists with pgvector extension.")
+
+
+def create_embedding_text(part: dict) -> str:
+    """Create a rich text representation of the part for embedding.
+    
+    Combines name, description, and compatible models to create a 
+    comprehensive text that captures the part's semantic meaning.
+    """
+    name = part.get("name", "")
+    description = part.get("description", "")
+    compatible = ", ".join(part.get("compatible_models", []))
+    
+    parts = [name]
+    if description:
+        parts.append(description)
+    if compatible:
+        parts.append(f"Compatible with: {compatible}")
+    
+    return ". ".join(parts)
+
+
+def embed_parts_batch(
+    parts_data: list[dict],
+    *,
+    batch_size: int = 20,
+) -> list[list[float]]:
+    """Generate embeddings for all parts in batches."""
+    embedding_client = get_huggingface_embedding_client()
+    client = embedding_client.get_embedding_client()
+
+    texts = [create_embedding_text(p) for p in parts_data]
+    all_embeddings = []
+
+    total_batches = (len(texts) - 1) // batch_size + 1
+
+    for i in range(0, len(texts), batch_size):
+        batch = texts[i : i + batch_size]
+        batch_num = i // batch_size + 1
+
+        log.info(f"Embedding batch {batch_num}/{total_batches} ({len(batch)} parts)...")
+
+        embeddings = client.embed_documents(batch)
+        all_embeddings.extend(embeddings)
+
+    log.info(f"Generated {len(all_embeddings)} embeddings.")
+    return all_embeddings
 
 def seed_parts():
     parts_data = [
@@ -63,9 +125,22 @@ def seed_parts():
         {'part_code': '88110KWA9500S', 'name': 'MIRROR ASSY R BACK', 'stock_quantity': 0, 'unit_price': 180.0, 'compatible_models': ['SPLENDOR PLUS OBD2B(Apr., 2025)'], 'description': 'The complete right-side rearview mirror assembly to provide visibility of traffic behind the rider.'},
     ]
 
+    log.info(f"Preparing to seed {len(parts_data)} parts...")
+    
+    ensure_tables_exist()
+    
+    log.info("Generating embeddings for all parts...")
+    embeddings = embed_parts_batch(parts_data)
+    
+    if len(embeddings) != len(parts_data):
+        raise RuntimeError(
+            f"Embedding count mismatch: got {len(embeddings)}, expected {len(parts_data)}"
+        )
+
     with Session(engine) as session:
-        for part in parts_data:
+        for part, embedding in zip(parts_data, embeddings):
             part['stock_quantity'] = random.randint(5, 50)
+            part['embedding'] = embedding
 
             statement = insert(PartInventory).values(**part)
             statement = statement.on_conflict_do_update(
@@ -75,12 +150,13 @@ def seed_parts():
                     'unit_price': statement.excluded.unit_price,
                     'compatible_models': statement.excluded.compatible_models,
                     'stock_quantity': statement.excluded.stock_quantity,
-                    'description': statement.excluded.description
+                    'description': statement.excluded.description,
+                    'embedding': statement.excluded.embedding,
                 }
             )
             session.exec(statement)
         session.commit()
-        print("Part inventory seeded successfully.")
+        log.info("Part inventory seeded successfully.")
 
 if __name__ == "__main__":
     seed_parts()
