@@ -1,4 +1,3 @@
-import asyncio
 from typing import Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 
@@ -41,8 +40,7 @@ async def ingest_file(
                 detail="Invalid PDF file. File content does not match PDF format"
             )
         
-        result = await asyncio.to_thread(
-            rag_service.ingest_pdf,
+        result = await rag_service.ingest_pdf(
             pdf_bytes=pdf_bytes,
             source=file.filename,
             vehicle_model=vehicle_model,
@@ -62,8 +60,7 @@ async def ingest_text(
     rag_service: RAGService = Depends(get_rag_service),
 ):
     try:
-        result = await asyncio.to_thread(
-            rag_service.ingest_text,
+        result = await rag_service.ingest_text(
             text_content=request.text,
             source=request.source,
             vehicle_model=request.vehicle_model,
@@ -84,8 +81,7 @@ async def search(
 ):
     try:
         if request.include_context:
-            results = await asyncio.to_thread(
-                rag_service.retrieve_with_context,
+            results = await rag_service.retrieve_with_context(
                 query=request.query,
                 vehicle_model=request.vehicle_model,
                 section=request.section,
@@ -94,8 +90,7 @@ async def search(
                 score_threshold=request.score_threshold,
             )
         else:
-            results = await asyncio.to_thread(
-                rag_service.retrieve,
+            results = await rag_service.retrieve(
                 query=request.query,
                 vehicle_model=request.vehicle_model,
                 section=request.section,
@@ -117,8 +112,7 @@ async def list_sources(
 ):
     """List all ingested sources with optional filtering."""
     try:
-        sources = await asyncio.to_thread(
-            rag_service.list_sources,
+        sources = await rag_service.list_sources(
             vehicle_model=vehicle_model,
             section=section,
         )
@@ -135,10 +129,7 @@ async def delete_source(
 ):
     """Delete all chunks for a given source."""
     try:
-        count = await asyncio.to_thread(
-            rag_service.delete_by_source,
-            source=source,
-        )
+        count = await rag_service.delete_by_source(source=source)
         if count == 0:
             raise HTTPException(status_code=404, detail=f"Source '{source}' not found")
         return {"status": "success", "source": source, "chunks_deleted": count}

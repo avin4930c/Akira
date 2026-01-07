@@ -1,36 +1,40 @@
 from fastapi import Depends
 from app.core.database import get_session
-from sqlmodel import Session, select, delete
+from sqlmodel import select, delete
+from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Optional, List
 from app.model.sql_models.mia import Customer, Vehicle, ServiceJob
 from app.core.errors import ConflictError
 from app.constants.common import MAX_SEARCH_RESULTS
 
 class CustomerService:
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
     async def add_customer(self, id: str, name: str, phone: str, email: str) -> Customer:
         if await self.get_customer(id):
             raise ConflictError(f"Customer with id '{id}' already exists")
 
-        existing_by_email = self.session.exec(select(Customer).where(Customer.email == email)).first()
+        result = await self.session.exec(select(Customer).where(Customer.email == email))
+        existing_by_email = result.first()
         if existing_by_email:
             raise ConflictError(f"Email '{email}' is already registered to another customer")
 
         customer = Customer(id=id, name=name, phone=phone, email=email)
         self.session.add(customer)
-        self.session.commit()
-        self.session.refresh(customer)
+        await self.session.commit()
+        await self.session.refresh(customer)
         return customer
         
     async def get_customer(self, customer_id: str) -> Optional[Customer]:
         statement = select(Customer).where(Customer.id == customer_id)
-        return self.session.exec(statement).first()
+        result = await self.session.exec(statement)
+        return result.first()
     
     async def list_customers(self) -> List[Customer]:
         statement = select(Customer)
-        return list(self.session.exec(statement).all())
+        result = await self.session.exec(statement)
+        return list(result.all())
 
     async def search_customers(self, q: str) -> List[Customer]:
         q = (q or "").strip()
@@ -42,7 +46,8 @@ class CustomerService:
             (Customer.name.ilike(search_pattern)) |
             (Customer.email.ilike(search_pattern))
         ).limit(MAX_SEARCH_RESULTS)
-        return list(self.session.exec(statement).all())
+        result = await self.session.exec(statement)
+        return list(result.all())
     
     async def update_customer(
         self,
@@ -64,7 +69,8 @@ class CustomerService:
         if email is not None:
             # If email is changing, ensure uniqueness
             if email != customer.email:
-                existing_by_email = self.session.exec(select(Customer).where(Customer.email == email)).first()
+                result = await self.session.exec(select(Customer).where(Customer.email == email))
+                existing_by_email = result.first()
                 if existing_by_email and existing_by_email.id != customer_id:
                     raise ConflictError(f"Email '{email}' is already registered to another customer")
             updates["email"] = email
@@ -75,16 +81,16 @@ class CustomerService:
             setattr(customer, k, v)
 
         self.session.add(customer)
-        self.session.commit()
-        self.session.refresh(customer)
+        await self.session.commit()
+        await self.session.refresh(customer)
         return customer
 
     async def delete_customer(self, customer_id: str) -> bool:
         customer = await self.get_customer(customer_id)
         if not customer:
             return False
-        self.session.delete(customer)
-        self.session.commit()
+        await self.session.delete(customer)
+        await self.session.commit()
         return True
 
     async def delete_customer_cascade(self, customer_id: str) -> bool:
@@ -93,17 +99,18 @@ class CustomerService:
             return False
 
         try:
-            self.session.exec(delete(ServiceJob).where(ServiceJob.customer_id == customer_id))
-            self.session.exec(delete(Vehicle).where(Vehicle.customer_id == customer_id))
-            self.session.delete(customer)
-            self.session.commit()
+            await self.session.exec(delete(ServiceJob).where(ServiceJob.customer_id == customer_id))
+            await self.session.exec(delete(Vehicle).where(Vehicle.customer_id == customer_id))
+            await self.session.delete(customer)
+            await self.session.commit()
             return True
         except Exception:
-            self.session.rollback()
+            await self.session.rollback()
             raise
 
     async def list_vehicles_for_customer(self, customer_id: str) -> List[Vehicle]:
-        return list(self.session.exec(select(Vehicle).where(Vehicle.customer_id == customer_id)).all())
+        result = await self.session.exec(select(Vehicle).where(Vehicle.customer_id == customer_id))
+        return list(result.all())
 
-def get_customer_service(db: Session = Depends(get_session)) -> CustomerService:
+def get_customer_service(db: AsyncSession = Depends(get_session)) -> CustomerService:
     return CustomerService(session=db)

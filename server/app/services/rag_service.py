@@ -1,3 +1,4 @@
+import asyncio
 import io
 import re
 import time
@@ -9,7 +10,8 @@ import tiktoken
 from fastapi import Depends
 from pypdf import PdfReader
 from sqlalchemy import delete
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.database import get_session
 from app.model.sql_models.rag import RagChunk
@@ -275,7 +277,7 @@ class TextChunker:
 class RAGService:
     def __init__(
         self,
-        session: Session,
+        session: AsyncSession,
         embedding_provider: BaseEmbeddingClient,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
@@ -313,7 +315,7 @@ class RAGService:
         
         return "\n\n".join(pages_text)
     
-    def _embed_batch(self, texts: List[str], batch_size: int = EMBEDDING_BATCH_SIZE) -> List[List[float]]:
+    async def _embed_batch(self, texts: List[str], batch_size: int = EMBEDDING_BATCH_SIZE) -> List[List[float]]:
         all_embeddings = []
         total_batches = (len(texts) - 1) // batch_size + 1
         
@@ -324,7 +326,7 @@ class RAGService:
             # Simple retry logic for rate limits
             for attempt in range(EMBEDDING_MAX_RETRIES):
                 try:
-                    embeddings = self.embedding_client.embed_documents(batch)
+                    embeddings = await asyncio.to_thread(self.embedding_client.embed_documents, batch)
                     all_embeddings.extend(embeddings)
                     break
                 except Exception as e:
@@ -332,17 +334,17 @@ class RAGService:
                         if attempt < EMBEDDING_MAX_RETRIES - 1:
                             wait_time = (attempt + 1) * 2
                             log.warning(f"Rate limit hit. Retrying batch {current_batch_num}/{total_batches} in {wait_time}s...")
-                            time.sleep(wait_time)
+                            await asyncio.sleep(wait_time)
                             continue
                     log.error(f"Failed to embed batch {current_batch_num}: {e}")
                     raise e
             
             if i + batch_size < len(texts):
-                time.sleep(EMBEDDING_BATCH_DELAY)
+                await asyncio.sleep(EMBEDDING_BATCH_DELAY)
                 
         return all_embeddings
     
-    def ingest_pdf(
+    async def ingest_pdf(
         self,
         pdf_bytes: bytes,
         source: str,
@@ -360,7 +362,7 @@ class RAGService:
             raise ValueError("No chunks generated from PDF")
         
         chunk_texts = [chunk for chunk, _ in chunks_with_metadata]
-        vectors = self._embed_batch(chunk_texts)
+        vectors = await self._embed_batch(chunk_texts)
         
         try:
             for (content, metadata), vec in zip(chunks_with_metadata, vectors):
@@ -374,9 +376,9 @@ class RAGService:
                 )
                 self.session.add(chunk_record)
             
-            self.session.commit()
+            await self.session.commit()
         except Exception as e:
-            self.session.rollback()
+            await self.session.rollback()
             log.error(f"Failed to commit chunks to database: {e}")
             raise ValueError(f"Database commit failed: {str(e)}")
         
@@ -389,7 +391,7 @@ class RAGService:
             "total_tokens": sum(m.token_count for _, m in chunks_with_metadata),
         }
     
-    def ingest_text(
+    async def ingest_text(
         self,
         text_content: str,
         source: str,
@@ -405,7 +407,7 @@ class RAGService:
             raise ValueError("No chunks generated from text")
         
         chunk_texts = [chunk for chunk, _ in chunks_with_metadata]
-        vectors = self._embed_batch(chunk_texts)
+        vectors = await self._embed_batch(chunk_texts)
         
         try:
             for (content, metadata), vec in zip(chunks_with_metadata, vectors):
@@ -419,9 +421,9 @@ class RAGService:
                 )
                 self.session.add(chunk_record)
             
-            self.session.commit()
+            await self.session.commit()
         except Exception as e:
-            self.session.rollback()
+            await self.session.rollback()
             log.error(f"Failed to commit text chunks to database: {e}")
             raise ValueError(f"Database commit failed: {str(e)}")
         
@@ -434,7 +436,7 @@ class RAGService:
             "total_tokens": sum(m.token_count for _, m in chunks_with_metadata),
         }
     
-    def retrieve(
+    async def retrieve(
         self,
         query: str,
         vehicle_model: Optional[str] = None,
@@ -442,7 +444,7 @@ class RAGService:
         top_k: int = 5,
         score_threshold: Optional[float] = None,
     ) -> List[RetrievedChunk]:
-        query_vector = self.embedding_client.embed_query(query)
+        query_vector = await asyncio.to_thread(self.embedding_client.embed_query, query)
         
         distance_expr = RagChunk.embedding.cosine_distance(query_vector)
         score_expr = 1 - distance_expr
@@ -462,7 +464,8 @@ class RAGService:
             
         statement = statement.order_by(distance_expr).limit(top_k)
         
-        results = self.session.exec(statement).all()
+        result = await self.session.exec(statement)
+        results = result.all()
         
         return [
             RetrievedChunk(
@@ -477,7 +480,7 @@ class RAGService:
             for chunk, score in results
         ]
     
-    def retrieve_with_context(
+    async def retrieve_with_context(
         self,
         query: str,
         vehicle_model: Optional[str] = None,
@@ -486,7 +489,7 @@ class RAGService:
         context_window: int = 1,
         score_threshold: Optional[float] = None,
     ) -> List[RetrievedChunk]:
-        main_chunks = self.retrieve(
+        main_chunks = await self.retrieve(
             query=query,
             vehicle_model=vehicle_model,
             section=section,
@@ -509,7 +512,8 @@ class RAGService:
                 .order_by(RagChunk.chunk_index)
             )
             
-            context_rows = self.session.exec(statement).all()
+            result = await self.session.exec(statement)
+            context_rows = result.all()
             
             for r in context_rows:
                 key = (r.source, r.chunk_index)
@@ -531,18 +535,19 @@ class RAGService:
         
         return sorted_chunks
     
-    def delete_by_source(self, source: str) -> int:
+    async def delete_by_source(self, source: str) -> int:
         count_stmt = select(RagChunk).where(RagChunk.source == source)
-        count = len(self.session.exec(count_stmt).all())
+        result = await self.session.exec(count_stmt)
+        count = len(result.all())
         
         delete_stmt = delete(RagChunk).where(RagChunk.source == source)
-        self.session.execute(delete_stmt)
-        self.session.commit()
+        await self.session.execute(delete_stmt)
+        await self.session.commit()
         
         log.info(f"Deleted {count} chunks from source: {source}")
         return count
     
-    def list_sources(
+    async def list_sources(
         self,
         vehicle_model: Optional[str] = None,
         section: Optional[str] = None,
@@ -567,7 +572,8 @@ class RAGService:
         
         statement = statement.order_by(RagChunk.source)
         
-        rows = self.session.exec(statement).all()
+        result = await self.session.exec(statement)
+        rows = result.all()
         
         return [
             {
@@ -584,7 +590,7 @@ def get_embedding_provider() -> BaseEmbeddingClient:
     return get_gemini_embedding_client()
 
 def get_rag_service(
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
     embedding_provider: BaseEmbeddingClient = Depends(get_embedding_provider),
 ) -> RAGService:
     return RAGService(

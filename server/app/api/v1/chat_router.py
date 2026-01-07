@@ -98,6 +98,8 @@ async def chat_websocket(
                 )
                 continue
 
+            current_thread_title = thread.title if thread.title else ""
+
             await chat_service.save_message(
                 thread_id=thread_id,
                 content=chat_request.message,
@@ -117,7 +119,7 @@ async def chat_websocket(
                 messages=langchain_messages,
                 query=chat_request.message,
                 thread_id=thread_id,
-                thread_title=thread.title if thread.title else "",
+                thread_title=current_thread_title,
                 thread_updated=False,
                 summary=db_summary.content if db_summary else None,
                 summary_updated=False,
@@ -174,45 +176,45 @@ async def chat_websocket(
                         message=json.dumps(response_message),
                     )
                     
+            last_saved_message_id = None
             if existing_message:
                 last_saved_message = await chat_service.save_message(
                     thread_id=thread_id,
                     content=existing_message,
                     sender="assistant",
                 )
+                last_saved_message_id = last_saved_message.id
                 
                 await chat_service.update_chat_thread(thread_id=thread_id, user_id=user_id)
 
             final_state = workflow.get_state(
                 config={"configurable": {"thread_id": thread_id}}
             )
-            if (
-                final_state
-                and final_state.values.get("summary_updated")
-                and final_state.values.get("summary")
-                and last_saved_message
-            ):
+            
+            summary_updated = final_state.values.get("summary_updated") if final_state else False
+            summary_content = final_state.values.get("summary") if final_state else None
+            thread_updated = final_state.values.get("thread_updated") if final_state else False
+            thread_title = final_state.values.get("thread_title") if final_state else None
+            
+            if summary_updated and summary_content and last_saved_message_id:
                 await chat_service.save_summary(
                     thread_id=thread_id,
-                    summary_content=final_state.values["summary"],
-                    last_message_id=last_saved_message.id,
+                    summary_content=summary_content,
+                    last_message_id=last_saved_message_id,
                 )
                 
-            if (final_state
-                and final_state.values.get("thread_updated")
-                and final_state.values.get("thread_title")
-            ):
+            if thread_updated and thread_title:
                 await chat_service.update_chat_thread(
                     thread_id=thread_id,
                     user_id=user_id,
-                    new_title=final_state.values["thread_title"],
+                    new_title=thread_title,
                 )
                 
                 thread_update_response_message = {
                     "type": "thread_update",
                     "data": {
                         "thread_id": thread_id,
-                        "title": final_state.values["thread_title"],
+                        "title": thread_title,
                         "updated": True,
                     }
                 }

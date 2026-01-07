@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
 from app.config.logger_config import setup_logger
 from app.settings.settings import settings
-from app.core.database import init_db
+from app.core.database import init_db, async_engine
 from app.utils.langsmith_utils import apply_langsmith_env
 
 logger = setup_logger(__name__, log_level=settings.LOG_LEVEL)
@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
     # Initialize database
     logger.info("Initializing database...")
     try:
-        init_db()
+        await init_db()
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
@@ -28,3 +28,8 @@ async def lifespan(app: FastAPI):
     
     # Cleanup
     logger.info("App is shutting down...")
+    try:
+        await async_engine.dispose()
+        logger.info("Database engine disposed")
+    except Exception as e:
+        logger.error(f"Error disposing database engine: {e}")

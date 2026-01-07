@@ -2,9 +2,10 @@ import argparse
 import asyncio
 import json
 from typing import List
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.constants.enums.mia_enums import ServiceJobPriorityLevel
-from app.core.database import get_session
+from app.core.database import async_engine
 from app.clients.embedding_clients.huggingface_embedding_client import (
     get_huggingface_embedding_client,
 )
@@ -40,15 +41,8 @@ def _build_plan(part_names: List[str], *, quantity: int) -> TechnicalPlanRespons
 
 async def run_once(*, parts: List[str], quantity: int, vehicle_model: str | None) -> None:
     embedding_provider = get_huggingface_embedding_client()
-    
-    session_gen = get_session()
-    try:
-        session = next(session_gen)
-    except StopIteration:
-        print("Error: Could not obtain database session")
-        return
 
-    try:
+    async with AsyncSession(async_engine) as session:
         service = InventoryService(
             session=session, 
             embedding_client=embedding_provider.get_embedding_client()
@@ -80,9 +74,6 @@ async def run_once(*, parts: List[str], quantity: int, vehicle_model: str | None
 
         print("\n=== Raw JSON (full) ===")
         print(json.dumps(enriched.model_dump(mode="json"), indent=2))
-
-    finally:
-        session.close()
 
 
 async def interactive(*, quantity: int, vehicle_model: str | None) -> None:

@@ -1,13 +1,14 @@
 from fastapi import Depends
 from datetime import datetime
 from typing import List, Optional
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 from app.model.sql_models.chat import ChatThread, ChatMessage, ChatSummary
 from app.core.database import get_session
 
 
 class ChatService:
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
     async def create_chat_thread(self, user_id: str, title: str) -> ChatThread:
@@ -19,8 +20,8 @@ class ChatService:
         )
 
         self.session.add(thread)
-        self.session.commit()
-        self.session.refresh(thread)
+        await self.session.commit()
+        await self.session.refresh(thread)
 
         return thread
 
@@ -29,13 +30,15 @@ class ChatService:
             ChatThread.id == thread_id,
             ChatThread.user_id == user_id
         )
-        return self.session.exec(statement).first()
+        result = await self.session.exec(statement)
+        return result.first()
 
     async def list_chat_threads(self, user_id: str) -> List[ChatThread]:
         statement = select(ChatThread).where(
             ChatThread.user_id == user_id
         ).order_by(ChatThread.updated_at.desc())
-        return list(self.session.exec(statement).all())
+        result = await self.session.exec(statement)
+        return list(result.all())
 
     async def update_chat_thread(self, thread_id: str, user_id: str, new_title: Optional[str] = None) -> Optional[ChatThread]:
         thread = await self.get_chat_thread(thread_id, user_id)
@@ -48,8 +51,8 @@ class ChatService:
         thread.updated_at = datetime.utcnow()
 
         self.session.add(thread)
-        self.session.commit()
-        self.session.refresh(thread)
+        await self.session.commit()
+        await self.session.refresh(thread)
         return thread
 
     async def delete_chat_thread(self, thread_id: str, user_id: str) -> bool:
@@ -60,18 +63,20 @@ class ChatService:
 
         message_statement = select(ChatMessage).where(
             ChatMessage.thread_id == thread_id)
-        messages = self.session.exec(message_statement).all()
+        message_result = await self.session.exec(message_statement)
+        messages = message_result.all()
         for message in messages:
-            self.session.delete(message)
+            await self.session.delete(message)
 
         summary_statement = select(ChatSummary).where(
             ChatSummary.thread_id == thread_id)
-        summaries = self.session.exec(summary_statement).all()
+        summary_result = await self.session.exec(summary_statement)
+        summaries = summary_result.all()
         for summary in summaries:
-            self.session.delete(summary)
+            await self.session.delete(summary)
 
-        self.session.delete(thread)
-        self.session.commit()
+        await self.session.delete(thread)
+        await self.session.commit()
         return True
 
     async def get_chat_messages(self, thread_id: str, limit: Optional[int] = None) -> List[ChatMessage]:
@@ -82,7 +87,8 @@ class ChatService:
         if limit:
             statement = statement.limit(limit)
 
-        return list(self.session.exec(statement).all())
+        result = await self.session.exec(statement)
+        return list(result.all())
 
     async def save_message(self, thread_id: str, content: str, sender: str) -> ChatMessage:
         message = ChatMessage(
@@ -93,8 +99,8 @@ class ChatService:
         )
 
         self.session.add(message)
-        self.session.commit()
-        self.session.refresh(message)
+        await self.session.commit()
+        await self.session.refresh(message)
         
         return message
 
@@ -102,7 +108,8 @@ class ChatService:
         statement = select(ChatSummary).where(
             ChatSummary.thread_id == thread_id
         ).order_by(ChatSummary.created_at.desc()).limit(1)
-        return self.session.exec(statement).first()
+        result = await self.session.exec(statement)
+        return result.first()
 
     async def save_summary(self, thread_id: str, summary_content: str, last_message_id: str) -> ChatSummary:
         existing_summary = await self.get_thread_summary(thread_id)
@@ -123,10 +130,10 @@ class ChatService:
             )
             self.session.add(summary)
 
-        self.session.commit()
-        self.session.refresh(summary)
+        await self.session.commit()
+        await self.session.refresh(summary)
         return summary
 
 
-def get_chat_service(db: Session = Depends(get_session)) -> ChatService:
+def get_chat_service(db: AsyncSession = Depends(get_session)) -> ChatService:
     return ChatService(session=db)
