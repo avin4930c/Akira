@@ -135,7 +135,7 @@ async def seed_parts():
     await ensure_tables_exist()
     
     log.info("Generating embeddings for all parts...")
-    embeddings = embed_parts_batch(parts_data)
+    embeddings = await asyncio.to_thread(embed_parts_batch, parts_data)
     
     if len(embeddings) != len(parts_data):
         raise RuntimeError(

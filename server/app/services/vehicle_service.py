@@ -97,7 +97,7 @@ class VehicleService:
             return False
         result = await self.session.exec(select(Customer).where(Customer.id == vehicle.customer_id))
         customer = result.first()
-        await self.session.delete(vehicle)
+        self.session.delete(vehicle)
         if customer:
             customer.vehicle_count = max(0, (customer.vehicle_count or 0) - 1)
             self.session.add(customer)
@@ -108,7 +108,7 @@ class VehicleService:
         vehicles = await self.list_vehicles(customer_id)
         deleted = 0
         for v in vehicles:
-            await self.session.delete(v)
+            self.session.delete(v)
             deleted += 1
         result = await self.session.exec(select(Customer).where(Customer.id == customer_id))
         customer = result.first()
