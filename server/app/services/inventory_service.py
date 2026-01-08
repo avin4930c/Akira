@@ -4,7 +4,8 @@ from typing import List, Optional
 from fastapi import Depends
 from langchain_core.embeddings import Embeddings
 from sqlalchemy import or_
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.clients.embedding_clients.base_embedding_client import BaseEmbeddingClient
 from app.clients.embedding_clients.huggingface_embedding_client import (
@@ -47,7 +48,7 @@ class _ScoredCandidate:
 
 
 class InventoryService:
-    def __init__(self, session: Session, embedding_client: Embeddings):
+    def __init__(self, session: AsyncSession, embedding_client: Embeddings):
         self.session = session
         self.embedding_client = embedding_client
 
@@ -80,7 +81,8 @@ class InventoryService:
                 statement = statement.where(or_(*vehicle_clauses))
 
         statement = statement.order_by(distance_expr).limit(limit)
-        results = self.session.exec(statement).all()
+        result = await self.session.exec(statement)
+        results = result.all()
         return [(part, float(sim)) for part, sim in results]
 
     async def _find_best_match(
@@ -197,7 +199,7 @@ class InventoryService:
 
 
 def get_inventory_service(
-    db: Session = Depends(get_session),
+    db: AsyncSession = Depends(get_session),
     embedding_provider: BaseEmbeddingClient = Depends(get_huggingface_embedding_client),
 ) -> InventoryService:
     return InventoryService(

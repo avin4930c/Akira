@@ -1,23 +1,26 @@
 from fastapi import Depends
 from app.core.database import get_session
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Optional, List
 from datetime import datetime
 from app.model.sql_models.mia import Vehicle, Customer
 from app.core.errors import ConflictError, ValidationError
 
 class VehicleService:
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
     async def add_vehicle(self, customer_id: str, make: str, model: str, year: int, registration: str, mileage: int, engine_type: str, last_service_date: Optional[datetime] = None) -> Vehicle:
         registration = registration.strip().upper()
-        customer: Customer = self.session.exec(select(Customer).where(Customer.id == customer_id)).first()
+        result = await self.session.exec(select(Customer).where(Customer.id == customer_id))
+        customer: Customer = result.first()
         if not customer:
             raise ValidationError(f"Customer '{customer_id}' not found")
 
         # Ensure registration is unique
-        existing_reg = self.session.exec(select(Vehicle).where(Vehicle.registration == registration)).first()
+        result = await self.session.exec(select(Vehicle).where(Vehicle.registration == registration))
+        existing_reg = result.first()
         if existing_reg:
             raise ConflictError(f"Registration '{registration}' is already registered to another vehicle")
 
@@ -27,17 +30,19 @@ class VehicleService:
         customer.vehicle_count = (customer.vehicle_count or 0) + 1
         self.session.add(customer)
         
-        self.session.commit()
-        self.session.refresh(vehicle)
+        await self.session.commit()
+        await self.session.refresh(vehicle)
         return vehicle
 
     async def get_vehicle(self, vehicle_id: str) -> Optional[Vehicle]:
         statement = select(Vehicle).where(Vehicle.id == vehicle_id)
-        return self.session.exec(statement).first()
+        result = await self.session.exec(statement)
+        return result.first()
 
     async def list_vehicles(self, customer_id: str) -> List[Vehicle]:
         statement = select(Vehicle).where(Vehicle.customer_id == customer_id)
-        return list(self.session.exec(statement).all())
+        result = await self.session.exec(statement)
+        return list(result.all())
 
     """TODO: Check if fields can be set to required and adapt in frontend"""
     async def update_vehicle(
@@ -65,7 +70,8 @@ class VehicleService:
         if registration is not None:
             normalized_reg = registration.strip().upper()
             if normalized_reg != (vehicle.registration or "").upper():
-                existing_reg = self.session.exec(select(Vehicle).where(Vehicle.registration == normalized_reg)).first()
+                result = await self.session.exec(select(Vehicle).where(Vehicle.registration == normalized_reg))
+                existing_reg = result.first()
                 if existing_reg and existing_reg.id != vehicle_id:
                     raise ConflictError(f"Registration '{normalized_reg}' is already registered to another vehicle")
             updates["registration"] = normalized_reg
@@ -80,8 +86,8 @@ class VehicleService:
             setattr(vehicle, k, v)
 
         self.session.add(vehicle)
-        self.session.commit()
-        self.session.refresh(vehicle)
+        await self.session.commit()
+        await self.session.refresh(vehicle)
 
         return vehicle
 
@@ -89,12 +95,13 @@ class VehicleService:
         vehicle = await self.get_vehicle(vehicle_id)
         if not vehicle:
             return False
-        customer = self.session.exec(select(Customer).where(Customer.id == vehicle.customer_id)).first()
+        result = await self.session.exec(select(Customer).where(Customer.id == vehicle.customer_id))
+        customer = result.first()
         self.session.delete(vehicle)
         if customer:
             customer.vehicle_count = max(0, (customer.vehicle_count or 0) - 1)
             self.session.add(customer)
-        self.session.commit()
+        await self.session.commit()
         return True
 
     async def delete_vehicles_for_customer(self, customer_id: str) -> int:
@@ -103,12 +110,13 @@ class VehicleService:
         for v in vehicles:
             self.session.delete(v)
             deleted += 1
-        customer = self.session.exec(select(Customer).where(Customer.id == customer_id)).first()
+        result = await self.session.exec(select(Customer).where(Customer.id == customer_id))
+        customer = result.first()
         if customer:
             customer.vehicle_count = 0
             self.session.add(customer)
-        self.session.commit()
+        await self.session.commit()
         return deleted
 
-def get_vehicle_service(db: Session = Depends(get_session)) -> VehicleService:
+def get_vehicle_service(db: AsyncSession = Depends(get_session)) -> VehicleService:
     return VehicleService(session=db)

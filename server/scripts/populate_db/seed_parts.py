@@ -1,15 +1,17 @@
 import sys
 from pathlib import Path
 import random
+import asyncio
 
 current_dir = Path(__file__).resolve().parent
 server_dir = current_dir.parent.parent
 sys.path.append(str(server_dir))
 
-from sqlmodel import Session, SQLModel
+from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import text
-from app.core.database import engine
+from app.core.database import async_engine
 from app.model.sql_models.mia import PartInventory
 from app.clients.embedding_clients.huggingface_embedding_client import (
     get_huggingface_embedding_client,
@@ -19,12 +21,15 @@ from app.config.logger_config import setup_logger
 log = setup_logger(__name__)
 
 
-def ensure_tables_exist():
+async def ensure_tables_exist():
     """Create the PartInventory table and enable pgvector extension if needed."""
-    with engine.begin() as conn:
-        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-    
-    SQLModel.metadata.create_all(engine, tables=[PartInventory.__table__])
+    async with async_engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        await conn.run_sync(
+            lambda sync_conn: SQLModel.metadata.create_all(
+                sync_conn, tables=[PartInventory.__table__]
+            )
+        )
     log.info("Ensured PartInventory table exists with pgvector extension.")
 
 
@@ -73,7 +78,7 @@ def embed_parts_batch(
     log.info(f"Generated {len(all_embeddings)} embeddings.")
     return all_embeddings
 
-def seed_parts():
+async def seed_parts():
     parts_data = [
         {'part_code': '20K1110S', 'name': 'CHAIN SPROCKET KIT (HF DWN / HF DLX)', 'stock_quantity': 0, 'unit_price': 737.0, 'compatible_models': ['SPLENDOR PLUS OBD2B(Apr., 2025)'], 'description': 'A complete set containing the front and rear sprockets along with the drive chain, essential for transferring engine power to the rear wheel.'},
         {'part_code': '29K210S', 'name': 'SPEEDOMETER DRIVE KIT', 'stock_quantity': 0, 'unit_price': 50.0, 'compatible_models': ['SPLENDOR PLUS OBD2B(Apr., 2025)'], 'description': 'The mechanism located at the wheel hub that measures wheel rotation speed and transmits it to the speedometer gauge.'},
@@ -127,17 +132,17 @@ def seed_parts():
 
     log.info(f"Preparing to seed {len(parts_data)} parts...")
     
-    ensure_tables_exist()
+    await ensure_tables_exist()
     
     log.info("Generating embeddings for all parts...")
-    embeddings = embed_parts_batch(parts_data)
+    embeddings = await asyncio.to_thread(embed_parts_batch, parts_data)
     
     if len(embeddings) != len(parts_data):
         raise RuntimeError(
             f"Embedding count mismatch: got {len(embeddings)}, expected {len(parts_data)}"
         )
 
-    with Session(engine) as session:
+    async with AsyncSession(async_engine) as session:
         for part, embedding in zip(parts_data, embeddings):
             part['stock_quantity'] = random.randint(5, 50)
             part['embedding'] = embedding
@@ -154,9 +159,9 @@ def seed_parts():
                     'embedding': statement.excluded.embedding,
                 }
             )
-            session.exec(statement)
-        session.commit()
+            await session.exec(statement)
+        await session.commit()
         log.info("Part inventory seeded successfully.")
 
 if __name__ == "__main__":
-    seed_parts()
+    asyncio.run(seed_parts())

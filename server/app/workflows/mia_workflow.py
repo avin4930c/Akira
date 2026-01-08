@@ -72,7 +72,7 @@ class MiaWorkflow:
         response = await self.llm.ainvoke(formatted_prompt)
         search_query = response.content if hasattr(response, 'content') else str(response)
         
-        chunks = self.rag_service.retrieve(
+        chunks = await self.rag_service.retrieve(
             query=search_query.strip(),
             vehicle_model=vehicle_model,
             top_k=5,
