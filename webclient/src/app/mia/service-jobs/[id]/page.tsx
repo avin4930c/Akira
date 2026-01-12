@@ -1,13 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { DetailHeader } from "@/components/mia/service-jobs/DetailHeader";
-import { SJCustomerCard } from "@/components/mia/service-jobs/SJCustomerCard";
-import { SJVehicleCard } from "@/components/mia/service-jobs/SJVehicleCard";
-import { DiagnosisSection } from "@/components/mia/service-jobs/DiagnosisSection";
-import { RecommendedFixesSection } from "@/components/mia/service-jobs/RecommendedFixesSection";
+import { RepairTasksSection } from "@/components/mia/service-jobs/main/RepairTasksSection";
+import { SuggestedPartsSection } from "@/components/mia/service-jobs/main/SuggestedPartsSection";
+import { TipsSection } from "@/components/mia/service-jobs/main/TipsSection";
+import { DetailHeader } from "@/components/mia/service-jobs/detail/DetailHeader";
+import { JobSummaryFooter } from "@/components/mia/service-jobs/detail/JobSummaryFooter";
+import { SJCustomerCard } from "@/components/mia/service-jobs/detail/SJCustomerCard";
+import { SJVehicleCard } from "@/components/mia/service-jobs/detail/SJVehicleCard";
+import { DiagnosisSection } from "@/components/mia/service-jobs/main/DiagnosisSection";
+import { mockServiceJobData } from "@/app/mocks/data/mockServiceJobData";
 
 export default function ServiceJobDetailPage() {
+    const serviceJobData = mockServiceJobData;
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -24,18 +30,23 @@ export default function ServiceJobDetailPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <SJCustomerCard name="John Rider" phone="+1 234 567 8900" email="john@example.com" />
-                <SJVehicleCard title="Yamaha MT-07" registration="ABC-1234" mileage="12,500 km" />
+                <SJVehicleCard title="2025 Honda CBR650R" registration="ABC-1234" mileage="6,000 miles" />
             </div>
 
-            <DiagnosisSection text={
-                "The motorcycle is experiencing irregular engine noise and reduced power output. Initial diagnosis suggests potential issues with the valve timing system. The chain tension appears to be within acceptable limits, but the spark plugs show signs of fouling which could contribute to the power loss."
-            } />
+            <DiagnosisSection text={serviceJobData.diagnosis_summary} />
 
-            <RecommendedFixesSection items={[
-                { title: "Replace spark plugs", description: "Install new NGK Iridium IX plugs" },
-                { title: "Valve timing adjustment", description: "Check and adjust valve clearances to spec" },
-                { title: "Fuel system cleaning", description: "Clean fuel injectors and air filter" },
-            ]} />
+            <RepairTasksSection tasks={serviceJobData.repair_tasks} />
+
+            <SuggestedPartsSection parts={serviceJobData.suggested_parts} />
+
+            <TipsSection tips={serviceJobData.tips} />
+
+            <JobSummaryFooter
+                estimatedTotalMinutes={serviceJobData.estimated_total_minutes}
+                priorityLevel={serviceJobData.priority_level}
+                warrantyNotes={serviceJobData.warranty_notes}
+                followUpRecommendations={serviceJobData.follow_up_recommendations}
+            />
         </motion.div>
     );
 }

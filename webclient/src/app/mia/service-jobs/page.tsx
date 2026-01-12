@@ -6,32 +6,14 @@ import { Wrench } from "lucide-react";
 import EmptyState from "@/components/mia/common/EmptyState";
 import { TableSkeleton } from "@/components/mia/common/LoadingSkeleton";
 import { useRouter } from "next/navigation";
-import { ServiceJobsHeader } from "@/components/mia/service-jobs/ServiceJobsHeader";
-import { ServiceJobsTable, type ServiceJobRow } from "@/components/mia/service-jobs/ServiceJobsTable";
-
-type ServiceJob = ServiceJobRow;
+import { useMiaStore } from "@/stores/mia-data-store";
+import { ServiceJobsHeader } from "@/components/mia/service-jobs/list/ServiceJobsHeader";
+import { ServiceJobsTable } from "@/components/mia/service-jobs/list/ServiceJobsTable";
 
 export default function ServiceJobsPage() {
   const router = useRouter();
   const [isLoading] = useState(false);
-  const [jobs] = useState<ServiceJob[]>([
-    {
-      id: "1",
-      jobId: "SJ-2024-001",
-      customer: "John Rider",
-      vehicle: "Yamaha MT-07",
-      status: "validated",
-      lastUpdated: "2024-03-15",
-    },
-    {
-      id: "2",
-      jobId: "SJ-2024-002",
-      customer: "Sarah Biker",
-      vehicle: "Honda CBR650R",
-      status: "draft",
-      lastUpdated: "2024-03-14",
-    },
-  ]);
+  const { serviceJobs } = useMiaStore();
 
   if (isLoading) {
     return (
@@ -42,7 +24,7 @@ export default function ServiceJobsPage() {
     );
   }
 
-  if (jobs.length === 0) {
+  if (serviceJobs.length === 0) {
     return (
       <EmptyState
         icon={Wrench}
@@ -57,7 +39,7 @@ export default function ServiceJobsPage() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <ServiceJobsHeader onNew={() => router.push("/mia/service-jobs/new")} />
-      <ServiceJobsTable jobs={jobs} onView={(id) => router.push(`/mia/service-jobs/${id}`)} />
+      <ServiceJobsTable jobs={serviceJobs} onView={(id) => router.push(`/mia/service-jobs/${id}`)} />
     </motion.div>
   );
 }

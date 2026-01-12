@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { VehicleCard } from "./VehicleCard";
+import { VehicleCard } from "../components/VehicleCard";
 
 interface VehicleGridProps {
     vehicles: Array<{

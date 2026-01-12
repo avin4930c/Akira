@@ -1,17 +1,9 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ServiceJobStatusBadge, ServiceJobStatusLocal } from "./ServiceJobStatusBadge";
+import { ServiceJobStatusBadge } from "../components/ServiceJobStatusBadge";
+import { ServiceJob } from "@/types/mia";
 
-export interface ServiceJobRow {
-    id: string;
-    jobId: string;
-    customer: string;
-    vehicle: string;
-    status: ServiceJobStatusLocal;
-    lastUpdated: string;
-}
-
-export function ServiceJobsTable({ jobs, onView }: { jobs: ServiceJobRow[]; onView: (id: string) => void }) {
+export function ServiceJobsTable({ jobs, onView }: { jobs: ServiceJob[]; onView: (id: string) => void }) {
     return (
         <div className="glass-card rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
@@ -36,14 +28,14 @@ export function ServiceJobsTable({ jobs, onView }: { jobs: ServiceJobRow[]; onVi
                                 className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
                                 onClick={() => onView(job.id)}
                             >
-                                <td className="px-6 py-4 font-mono font-medium">{job.jobId}</td>
-                                <td className="px-6 py-4">{job.customer}</td>
-                                <td className="px-6 py-4 text-muted-foreground">{job.vehicle}</td>
+                                <td className="px-6 py-4 font-mono font-medium">{job.id}</td>
+                                <td className="px-6 py-4">{job.customer_id}</td>
+                                <td className="px-6 py-4 text-muted-foreground">{job.vehicle_id}</td>
                                 <td className="px-6 py-4">
                                     <ServiceJobStatusBadge status={job.status} />
                                 </td>
                                 <td className="px-6 py-4 text-muted-foreground">
-                                    {new Date(job.lastUpdated).toLocaleDateString()}
+                                    {new Date(job.created_at).toLocaleDateString()}
                                 </td>
                                 <td className="px-6 py-4">
                                     <Button

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Wrench, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { EditVehicleDialog } from "@/components/mia/vehicles/EditVehicleDialog";
+import { EditVehicleDialog } from "../dialogs/EditVehicleDialog";
 import type { Vehicle } from "@/types/mia";
 import ConfirmDeleteDialog from "@/components/ui/confirm-delete-dialog";
 import { useDeleteVehicleMutation } from "@/hooks/vehicles/useVehicles";

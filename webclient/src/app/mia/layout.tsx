@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Navigation from "@/components/common/Navigation";
-import MiaSidebar from "@/components/mia/MiaSidebar/MiaSidebar";
+import MiaSidebar from "@/components/mia/layout/MiaSidebar";
 
 export default function MiaLayout({
     children,

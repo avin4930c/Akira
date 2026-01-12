@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
 import { Car } from "lucide-react";
 import EmptyState from "@/components/mia/common/EmptyState";
-import { VehicleDetailHeader } from "@/components/mia/vehicles/VehicleDetailHeader";
-import { VehicleSpecsCard } from "@/components/mia/vehicles/VehicleSpecsCard";
-import { VehicleServiceHistory } from "@/components/mia/vehicles/VehicleServiceHistory";
-import { OwnerInfoCard } from "@/components/mia/vehicles/OwnerInfoCard";
-import { VehicleDetailQuickActions } from "@/components/mia/vehicles/VehicleDetailQuickActions";
 import { useVehicleById } from "@/hooks/vehicles/useVehicles";
 import { useCustomerById } from "@/hooks/customer/useCustomer";
 import { ServiceJob } from "@/types/mia";
+import { VehicleDetailHeader } from "@/components/mia/vehicles/detail/VehicleDetailHeader";
+import { VehicleSpecsCard } from "@/components/mia/vehicles/detail/VehicleSpecsCard";
+import { VehicleServiceHistory } from "@/components/mia/vehicles/detail/VehicleServiceHistory";
+import { OwnerInfoCard } from "@/components/mia/vehicles/detail/OwnerInfoCard";
+import { VehicleDetailQuickActions } from "@/components/mia/vehicles/detail/VehicleDetailQuickActions";
 
 export default function VehicleDetailPage() {
     const params = useParams();

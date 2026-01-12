@@ -1,8 +1,7 @@
 import { CheckCircle2 } from "lucide-react";
+import type { RecommendedFix } from "@/types/mia";
 
-interface FixItem { title: string; description: string }
-
-export function RecommendedFixesSection({ items }: { items: FixItem[] }) {
+export function RecommendedFixesSection({ items }: { items: RecommendedFix[] }) {
     return (
         <div className="glass-card p-6 rounded-xl">
             <div className="flex items-center gap-3 mb-4">

@@ -6,12 +6,12 @@ import { Car as CarIcon } from "lucide-react";
 import EmptyState from "@/components/mia/common/EmptyState";
 import { CardSkeleton } from "@/components/mia/common/LoadingSkeleton";
 import { useSearchParams } from "next/navigation";
-import { VehiclesHeader } from "@/components/mia/vehicles/VehiclesHeader";
-import { SelectCustomerCard } from "@/components/mia/vehicles/SelectCustomerCard";
-import { AddVehicleDialog } from "@/components/mia/vehicles/AddVehicleDialog";
-import { VehicleGrid } from "@/components/mia/vehicles/VehicleGrid";
 import { useCustomerById } from "@/hooks/customer/useCustomer";
 import { useVehiclesByCustomerId } from "@/hooks/vehicles/useVehicles";
+import { VehiclesHeader } from "@/components/mia/vehicles/list/VehiclesHeader";
+import { AddVehicleDialog } from "@/components/mia/vehicles/dialogs/AddVehicleDialog";
+import { SelectCustomerCard } from "@/components/mia/vehicles/detail/SelectCustomerCard";
+import { VehicleGrid } from "@/components/mia/vehicles/list/VehicleGrid";
 
 function VehiclesPageContent() {
     const searchParams = useSearchParams();
