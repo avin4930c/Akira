@@ -1,5 +1,5 @@
 import { TextareaField } from "@/components/mia/common/TextareaField";
-import { MAX_SERVICE_INFO_LENGTH, MIN_SERVICE_INFO_LENGTH } from "@/constants/notesFiledConstants";
+import { MAX_SERVICE_INFO_LENGTH, MIN_SERVICE_INFO_LENGTH } from "@/constants/notesFieldConstants";
 
 export function ServiceInfoField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (

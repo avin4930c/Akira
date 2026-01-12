@@ -1,5 +1,5 @@
 import { TextareaField } from "@/components/mia/common/TextareaField";
-import { MAX_NOTES_LENGTH, MIN_NOTES_LENGTH } from "@/constants/notesFiledConstants";
+import { MAX_NOTES_LENGTH, MIN_NOTES_LENGTH } from "@/constants/notesFieldConstants";
 
 export function NotesField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
