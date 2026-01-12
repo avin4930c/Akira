@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { updateVehicleSchema, type VehicleFormValues } from "@/schema/vehicle";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { VehicleFields } from "@/components/mia/vehicles/VehicleFields";
+import { VehicleFields } from "../components/VehicleFields";
 import { useUpdateVehicleMutation } from "@/hooks/vehicles/useVehicles";
 import type { Vehicle } from "@/types/mia";
 
@@ -27,14 +27,14 @@ export function EditVehicleDialog({ open, onOpenChange, vehicleId, vehicle, isLo
     resolver: zodResolver(updateVehicleSchema) as Resolver<VehicleFormValues>,
     defaultValues: existing
       ? {
-          make: existing.make,
-          model: existing.model,
-          year: existing.year,
-          registration: existing.registration,
-          mileage: existing.mileage,
-          engine_type: existing.engine_type,
-          last_service_date: existing.last_service_date,
-        }
+        make: existing.make,
+        model: existing.model,
+        year: existing.year,
+        registration: existing.registration,
+        mileage: existing.mileage,
+        engine_type: existing.engine_type,
+        last_service_date: existing.last_service_date,
+      }
       : undefined,
   });
 
@@ -81,7 +81,7 @@ export function EditVehicleDialog({ open, onOpenChange, vehicleId, vehicle, isLo
           <p className="text-muted-foreground">Vehicle not found.</p>
         ) : (
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-            <VehicleFields form={form} />
+            <VehicleFields register={form.register} errors={form.formState.errors} />
             <div className="flex gap-3">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel

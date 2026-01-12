@@ -1,8 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/mia/common/SearchableSelect";
 import { motion } from "framer-motion";
-
-type Option = { value: string; label: string; subtitle?: string };
+import type { SelectOption } from "@/types/mia";
 
 export function SelectVehicleControl({
   options,
@@ -11,7 +10,7 @@ export function SelectVehicleControl({
   visible,
   loading,
 }: {
-  options: Option[];
+  options: SelectOption[];
   value: string;
   onChange: (v: string) => void;
   visible: boolean;

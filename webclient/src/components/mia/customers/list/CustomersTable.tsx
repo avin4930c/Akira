@@ -106,7 +106,7 @@ export function CustomersTable({ customers, onViewVehicles, searchQuery = "" }: 
                     </tbody>
                 </table>
             </div>
-            
+
             <ConfirmDeleteDialog
                 open={!!confirmId}
                 onOpenChange={(open) => { if (!open) setConfirmId(null); }}

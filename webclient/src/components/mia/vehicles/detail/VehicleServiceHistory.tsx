@@ -1,13 +1,7 @@
 import { Wrench } from "lucide-react";
+import type { ServiceJob } from "@/types/mia";
 
-interface Job {
-  id: string;
-  status: string;
-  notes: string;
-  created_at: string;
-}
-
-export function VehicleServiceHistory({ jobs }: { jobs: Job[] }) {
+export function VehicleServiceHistory({ jobs }: { jobs: ServiceJob[] }) {
   return (
     <div className="glass-card p-6 rounded-xl">
       <div className="flex items-center gap-3 mb-6">
@@ -27,7 +21,8 @@ export function VehicleServiceHistory({ jobs }: { jobs: Job[] }) {
                 <span className="font-medium">Service Job #{job.id}</span>
                 <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary">{job.status}</span>
               </div>
-              <p className="text-sm text-muted-foreground">{job.notes}</p>
+              <p className="text-sm text-muted-foreground">{job.service_info}</p>
+              <p className="text-sm text-muted-foreground/80 mt-1">Notes: {job.mechanic_notes}</p>
               <div className="text-xs text-muted-foreground mt-2">
                 {new Date(job.created_at).toLocaleDateString()}
               </div>

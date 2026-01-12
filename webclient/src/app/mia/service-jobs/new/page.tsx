@@ -8,15 +8,16 @@ import { useMiaStore } from "@/stores/mia-data-store";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ServiceJobStatus } from "@/types/mia";
-import { NewServiceJobHeader } from "@/components/mia/service-jobs/NewServiceJobHeader";
-import { SelectCustomerControl } from "@/components/mia/service-jobs/SelectCustomerControl";
-import { SelectVehicleControl } from "@/components/mia/service-jobs/SelectVehicleControl";
-import { SelectMechanicControl } from "@/components/mia/service-jobs/SelectMechanicControl";
-import { NotesField } from "@/components/mia/service-jobs/NotesField";
-import { FormActions } from "@/components/mia/service-jobs/FormActions";
 import { useCustomers } from "@/hooks/customer/useCustomer";
 import { useVehiclesByCustomerId } from "@/hooks/vehicles/useVehicles";
 import { CardSkeleton } from "@/components/mia/common/LoadingSkeleton";
+import { NewServiceJobHeader } from "@/components/mia/service-jobs/form/NewServiceJobHeader";
+import { SelectCustomerControl } from "@/components/mia/service-jobs/form/SelectCustomerControl";
+import { SelectVehicleControl } from "@/components/mia/service-jobs/form/SelectVehicleControl";
+import { SelectMechanicControl } from "@/components/mia/service-jobs/form/SelectMechanicControl";
+import { ServiceInfoField } from "@/components/mia/service-jobs/form/ServiceInfoField";
+import { NotesField } from "@/components/mia/service-jobs/form/NotesField";
+import { FormActions } from "@/components/mia/service-jobs/form/FormActions";
 
 function NewServiceJobContent() {
     const router = useRouter();
@@ -25,6 +26,7 @@ function NewServiceJobContent() {
     const [selectedCustomer, setSelectedCustomer] = useState("");
     const [selectedVehicle, setSelectedVehicle] = useState("");
     const [selectedMechanic, setSelectedMechanic] = useState("");
+    const [serviceInfo, setServiceInfo] = useState("");
     const [notes, setNotes] = useState("");
     const [showWarning, setShowWarning] = useState(false);
 
@@ -71,9 +73,14 @@ function NewServiceJobContent() {
 
     const handleValidate = () => {
         const trimmedNotes = notes.trim();
+        const trimmedServiceInfo = serviceInfo.trim();
 
         if (!selectedCustomer || !selectedVehicle || !selectedMechanic) {
             toast.error("Please fill all required fields");
+            return;
+        }
+        if (!trimmedServiceInfo || trimmedServiceInfo.length < 5) {
+            setShowWarning(true);
             return;
         }
         if (!trimmedNotes || trimmedNotes.length < 10) {
@@ -85,7 +92,8 @@ function NewServiceJobContent() {
             customer_id: selectedCustomer,
             vehicle_id: selectedVehicle,
             mechanic_id: selectedMechanic,
-            notes: notes.trim(),
+            service_info: trimmedServiceInfo,
+            mechanic_notes: trimmedNotes,
             status: ServiceJobStatus.Validated,
         });
 
@@ -94,8 +102,14 @@ function NewServiceJobContent() {
     };
 
     const handleSaveDraft = () => {
+        const trimmedServiceInfo = serviceInfo.trim();
+
         if (!selectedCustomer || !selectedVehicle || !selectedMechanic) {
             toast.error("Please fill all required fields");
+            return;
+        }
+        if (!trimmedServiceInfo || trimmedServiceInfo.length < 5) {
+            toast.error("Please provide service information (minimum 5 characters)");
             return;
         }
 
@@ -103,7 +117,8 @@ function NewServiceJobContent() {
             customer_id: selectedCustomer,
             vehicle_id: selectedVehicle,
             mechanic_id: selectedMechanic,
-            notes: notes.trim(),
+            service_info: trimmedServiceInfo,
+            mechanic_notes: notes.trim(),
             status: ServiceJobStatus.Pending,
         });
 
@@ -132,14 +147,16 @@ function NewServiceJobContent() {
 
                 <SelectMechanicControl options={mechanicOptions} value={selectedMechanic} onChange={(v) => { setSelectedMechanic(v); setShowWarning(false); }} />
 
-                <NotesField value={notes} onChange={(v) => { setNotes(v); setShowWarning(false); }} count={notes.length} />
+                <ServiceInfoField value={serviceInfo} onChange={(v) => { setServiceInfo(v); setShowWarning(false); }} />
+
+                <NotesField value={notes} onChange={(v) => { setNotes(v); setShowWarning(false); }} />
 
                 {showWarning && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                         <Alert className="border-yellow-500/50 bg-yellow-500/10">
                             <AlertCircle className="h-4 w-4 text-yellow-500" />
                             <AlertDescription className="text-yellow-500">
-                                Missing data detected. Please provide more details about symptoms or parts before validation (minimum 10 characters).
+                                Missing data detected. Please provide service information and detailed symptoms/diagnosis before validation (minimum 5 characters for service info, 10 for notes).
                             </AlertDescription>
                         </Alert>
                     </motion.div>
@@ -148,7 +165,7 @@ function NewServiceJobContent() {
                 <FormActions
                     onValidate={handleValidate}
                     onSaveDraft={handleSaveDraft}
-                    disabled={!selectedCustomer || !selectedVehicle || !selectedMechanic}
+                    disabled={!selectedCustomer || !selectedVehicle || !selectedMechanic || !serviceInfo.trim()}
                 />
             </div>
         </motion.div>

@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createVehicleSchema, type CreateVehicleInput } from "@/schema/vehicle";
-import { VehicleFields } from "@/components/mia/vehicles/VehicleFields";
+import { VehicleFields } from "../components/VehicleFields";
 import { useAddVehicleMutation } from "@/hooks/vehicles/useVehicles";
 
 interface AddVehicleDialogProps {
@@ -78,7 +78,7 @@ export function AddVehicleDialog({ open, onOpenChange, selectedCustomerName, sel
                     )}
                     <form onSubmit={form.handleSubmit(handleAddVehicle)} className="space-y-4">
                         <input type="hidden" {...form.register("customer_id")} />
-                        <VehicleFields form={form} />
+                        <VehicleFields register={form.register} errors={form.formState.errors} />
                         <Button type="submit" disabled={addVehicleMutation.isPending} className="w-full bg-gradient-to-r from-primary to-blue-500">
                             {addVehicleMutation.isPending ? "Adding..." : "Add Vehicle"}
                         </Button>

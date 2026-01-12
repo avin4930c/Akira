@@ -6,12 +6,12 @@ import { Users } from "lucide-react";
 import EmptyState from "@/components/mia/common/EmptyState";
 import { TableSkeleton } from "@/components/mia/common/LoadingSkeleton";
 import { useRouter } from "next/navigation";
-import { CustomersHeader } from "@/components/mia/customers/CustomersHeader";
-import { CustomersSearchBar } from "@/components/mia/customers/CustomersSearchBar";
-import { CustomersTable } from "@/components/mia/customers/CustomersTable";
-import { AddCustomerDialog } from "@/components/mia/customers/AddCustomerDialog";
 import { useCustomers, useCustomerSearchSuggestions } from "@/hooks/customer/useCustomer";
 import { useDebouncedValue } from "@/hooks/common/useDebouncedValue";
+import { AddCustomerDialog } from "@/components/mia/customers/dialogs/AddCustomerDialog";
+import { CustomersHeader } from "@/components/mia/customers/list/CustomersHeader";
+import { CustomersSearchBar } from "@/components/mia/customers/list/CustomersSearchBar";
+import { CustomersTable } from "@/components/mia/customers/list/CustomersTable";
 
 export default function CustomersPage() {
   const router = useRouter();
