@@ -13,8 +13,8 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import text
 from app.core.database import async_engine
 from app.model.sql_models.mia import PartInventory
-from app.clients.embedding_clients.huggingface_embedding_client import (
-    get_huggingface_embedding_client,
+from app.clients.embedding_clients.lmstudio_embedding_client import (
+    get_lmstudio_embedding_client,
 )
 from app.config.logger_config import setup_logger
 
@@ -58,7 +58,7 @@ def embed_parts_batch(
     batch_size: int = 20,
 ) -> list[list[float]]:
     """Generate embeddings for all parts in batches."""
-    embedding_client = get_huggingface_embedding_client()
+    embedding_client = get_lmstudio_embedding_client()
     client = embedding_client.get_embedding_client()
 
     texts = [create_embedding_text(p) for p in parts_data]

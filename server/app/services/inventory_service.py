@@ -8,8 +8,8 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.clients.embedding_clients.base_embedding_client import BaseEmbeddingClient
-from app.clients.embedding_clients.huggingface_embedding_client import (
-    get_huggingface_embedding_client,
+from app.clients.embedding_clients.lmstudio_embedding_client import (
+    get_lmstudio_embedding_client,
 )
 from app.constants.inventory import (
     MAX_ALTERNATIVES,
@@ -200,7 +200,7 @@ class InventoryService:
 
 def get_inventory_service(
     db: AsyncSession = Depends(get_session),
-    embedding_provider: BaseEmbeddingClient = Depends(get_huggingface_embedding_client),
+    embedding_provider: BaseEmbeddingClient = Depends(get_lmstudio_embedding_client),
 ) -> InventoryService:
     return InventoryService(
         session=db,

@@ -17,7 +17,7 @@ from app.core.database import get_session
 from app.model.sql_models.rag import RagChunk
 from app.clients.embedding_clients.base_embedding_client import BaseEmbeddingClient
 from app.clients.embedding_clients.gemini_embedding_client import get_gemini_embedding_client
-from app.clients.embedding_clients.huggingface_embedding_client import get_huggingface_embedding_client
+from app.clients.embedding_clients.lmstudio_embedding_client import get_lmstudio_embedding_client
 from app.settings.settings import settings
 from app.config.logger_config import setup_logger
 from app.utils.db_utils import escape_like_pattern
@@ -586,7 +586,7 @@ class RAGService:
 
 def get_embedding_provider() -> BaseEmbeddingClient:
     if settings.USE_LOCAL_EMBEDDINGS:
-        return get_huggingface_embedding_client()
+        return get_lmstudio_embedding_client()
     return get_gemini_embedding_client()
 
 def get_rag_service(

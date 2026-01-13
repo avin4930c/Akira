@@ -6,8 +6,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.constants.enums.mia_enums import ServiceJobPriorityLevel
 from app.core.database import async_engine
-from app.clients.embedding_clients.huggingface_embedding_client import (
-    get_huggingface_embedding_client,
+from app.clients.embedding_clients.lmstudio_embedding_client import (
+    get_lmstudio_embedding_client,
 )
 from app.model.response.mia_plan import (
     SuggestedPart,
@@ -40,7 +40,7 @@ def _build_plan(part_names: List[str], *, quantity: int) -> TechnicalPlanRespons
 
 
 async def run_once(*, parts: List[str], quantity: int, vehicle_model: str | None) -> None:
-    embedding_provider = get_huggingface_embedding_client()
+    embedding_provider = get_lmstudio_embedding_client()
 
     async with AsyncSession(async_engine) as session:
         service = InventoryService(
