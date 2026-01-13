@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     USE_LOCAL_EMBEDDINGS: bool = False
     LOCAL_EMBEDDING_DIMENSION: int = 1024
 
-    LMSTUDIO_EMBEDDING_URL: str = "http://winhost:1234"
+    LMSTUDIO_EMBEDDING_URL: str = "http://127.0.0.1:1234"
     LMSTUDIO_EMBEDDING_MODEL: str = "text-embedding-qwen3-embedding-0.6b"
 
     RATE_LIMIT_ENABLED: bool = True
