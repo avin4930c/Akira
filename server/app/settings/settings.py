@@ -25,10 +25,10 @@ class Settings(BaseSettings):
     TAVILY_API_KEY: Optional[str] = None
 
     USE_LOCAL_EMBEDDINGS: bool = False
-    LOCAL_EMBEDDING_MODEL_NAME: str = "BAAI/bge-large-en-v1.5"
-    LOCAL_EMBEDDING_DEVICE: str = "cpu"
     LOCAL_EMBEDDING_DIMENSION: int = 1024
-    LOCAL_EMBEDDING_INSTRUCTION: Optional[str] = "Represent this sentence for searching relevant passages: "
+
+    LMSTUDIO_EMBEDDING_URL: str = "http://127.0.0.1:1234"
+    LMSTUDIO_EMBEDDING_MODEL: str = "text-embedding-qwen3-embedding-0.6b"
 
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_MAX_REQUESTS: int = 60
