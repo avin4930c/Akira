@@ -62,7 +62,18 @@ Generate a structured technical plan with:
 - Step-by-step repair tasks with clear instructions
 - Complete parts list with quantities
 - Helpful tips for the mechanic
-- Time and priority estimates""",
+- Time and priority estimates
+
+## Important: Use These Exact Values for Enums
+- **task category**: Must be one of: "inspection", "repair", "replacement", "adjustment", "cleaning"
+- **task difficulty**: Must be one of: "easy", "moderate", "advanced"
+- **priority_level**: Must be one of: "low", "medium", "high", "critical"
+- **part priority**: Must be one of: "required", "recommended", "optional"
+- **tip category**: Must be one of: "safety", "efficiency", "quality", "cost_saving"
+
+## Critical Output Requirement
+Return ONLY a single valid JSON object (no markdown, no code fences, no extra text) that conforms exactly to the schema instructions below.
+""",
         ),
         (
             "human",
@@ -90,7 +101,15 @@ Generate a structured technical plan with:
 
 ---
 
-Based on all the above information, generate a complete technical service plan.""",
+## JSON Schema to Follow
+You MUST return a valid JSON object that exactly matches this schema:
+
+{json_schema}
+
+---
+
+Based on all the above information, generate a complete technical service plan.
+Return ONLY the JSON object with no markdown formatting, no code blocks, no additional text.""",
         ),
     ]
 )

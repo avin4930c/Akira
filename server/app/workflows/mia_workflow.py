@@ -1,5 +1,6 @@
 from typing import TypedDict, Optional
 from fastapi import Depends
+import json
 from langgraph.graph import START, END, StateGraph
 from app.model.request.mia import ServiceJobRequest
 from app.model.response.customer import CustomerResponse
@@ -106,6 +107,8 @@ class MiaWorkflow:
         return {"web_search_results": web_context}
 
     async def generate_technical_plan(self, state: MiaWorkflowState) -> MiaWorkflowState:
+        json_schema = json.dumps(TechnicalPlanResponse.model_json_schema(), indent=2)
+        
         formatted_prompt = MIA_TECHNICAL_PLAN_PROMPT.format_messages(
             customer_data=state["customer_data"].model_dump_json(indent=2),
             vehicle_data=state["vehicle_data"].model_dump_json(indent=2),
@@ -113,12 +116,25 @@ class MiaWorkflow:
             mechanic_notes=state["service_job"].mechanic_notes,
             rag_context=state["rag_context"] or "No internal documentation found.",
             web_search_results=state["web_search_results"] or "No external resources found.",
+            json_schema=json_schema,
         )
 
-        structured_llm = self.llm.with_structured_output(TechnicalPlanResponse)
-        technical_plan = await structured_llm.ainvoke(formatted_prompt)
+        llm_output = await self.llm.ainvoke(formatted_prompt)
 
-        return {"technical_plan": technical_plan}
+        if getattr(llm_output, "tool_calls", None):
+            if len(llm_output.tool_calls) > 0:
+                data = llm_output.tool_calls[0]["args"]
+                technical_plan = TechnicalPlanResponse.model_validate(data)
+                return {"technical_plan": technical_plan}
+
+        try:
+            data = json.loads(llm_output.content)
+            technical_plan = TechnicalPlanResponse.model_validate(data)
+            return {"technical_plan": technical_plan}
+        except Exception as e:
+            raise ValueError(
+                f"Could not parse TechnicalPlanResponse.\nRaw content:\n{llm_output.content}"
+            ) from e
 
     async def inventory_lookup(self, state: MiaWorkflowState) -> MiaWorkflowState:
         """Look up suggested parts in inventory and enrich the technical plan."""
