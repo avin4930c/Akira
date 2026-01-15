@@ -3,7 +3,14 @@ dd() {
   exit 1
 }
 
-cd webclient
-npm run build || dd "Build Failed"
-npm run test || dd "Tests Failed"
-cd ..
+WEBCLIENT_CHANGED=$(git diff --cached --name-only | grep "^webclient/" || true)
+
+if [ -n "$WEBCLIENT_CHANGED" ]; then
+  echo "Webclient files changed, running build and tests..."
+  cd webclient
+  npm run build || dd "Build Failed"
+  npm run test || dd "Tests Failed"
+  cd ..
+else
+  echo "No webclient files changed, skipping build and tests."
+fi
