@@ -20,7 +20,7 @@ from app.constants.inventory import (
     VECTOR_SEARCH_LIMIT,
 )
 from app.core.database import get_session
-from app.model.response.mia_plan import (
+from app.model.response.mia import (
     AlternativePart,
     EnrichedTechnicalPlan,
     MatchedInventoryPart,

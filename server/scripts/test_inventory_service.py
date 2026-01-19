@@ -9,7 +9,7 @@ from app.core.database import async_engine
 from app.clients.embedding_clients.lmstudio_embedding_client import (
     get_lmstudio_embedding_client,
 )
-from app.model.response.mia_plan import (
+from app.model.response.mia import (
     SuggestedPart,
     TechnicalPlanResponse,
 )
