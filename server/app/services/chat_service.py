@@ -66,16 +66,16 @@ class ChatService:
         message_result = await self.session.exec(message_statement)
         messages = message_result.all()
         for message in messages:
-            self.session.delete(message)
+            await self.session.delete(message)
 
         summary_statement = select(ChatSummary).where(
             ChatSummary.thread_id == thread_id)
         summary_result = await self.session.exec(summary_statement)
         summaries = summary_result.all()
         for summary in summaries:
-            self.session.delete(summary)
+            await self.session.delete(summary)
 
-        self.session.delete(thread)
+        await self.session.delete(thread)
         await self.session.commit()
         return True
 

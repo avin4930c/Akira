@@ -89,7 +89,7 @@ class CustomerService:
         customer = await self.get_customer(customer_id)
         if not customer:
             return False
-        self.session.delete(customer)
+        await self.session.delete(customer)
         await self.session.commit()
         return True
 
@@ -101,7 +101,7 @@ class CustomerService:
         try:
             await self.session.exec(delete(ServiceJob).where(ServiceJob.customer_id == customer_id))
             await self.session.exec(delete(Vehicle).where(Vehicle.customer_id == customer_id))
-            self.session.delete(customer)
+            await self.session.delete(customer)
             await self.session.commit()
             return True
         except Exception:
