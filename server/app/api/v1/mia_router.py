@@ -8,7 +8,7 @@ from langgraph.graph.state import CompiledStateGraph
 from app.config.logger_config import setup_logger
 from app.core.sse_manager import SSEManager, get_sse_manager
 from app.workflows.mia_workflow import get_mia_workflow
-from app.model.request.service_job import ServiceJobRequest
+from app.model.request.service_job import ServiceJobRequest, UpdateAdditionalNotesRequest
 from app.model.response.service_job import ServiceJobResponse
 from app.constants.enums.mia_enums import ProcessingStage
 from app.services.mia_service import MiaService, get_mia_service, run_mia_workflow_background
@@ -50,7 +50,7 @@ async def stream_job_status(
             detail=f"Service job {job_id} not found"
         )
         
-    media_type="text/event-stream"
+    media_type = "text/event-stream"
     headers = {
         "Cache-Control": "no-cache",
         "X-Accel-Buffering": "no",
@@ -70,6 +70,8 @@ async def stream_job_status(
             })
             yield f"event: {event_type}\ndata: {data}\n\n"
             yield f"event: close\ndata: {{\"event_id\": \"{job_id}\"}}\n\n"
+
+            await sse_manager.unsubscribe(job_id)
         
         return StreamingResponse(
             immediate_response(),
@@ -127,11 +129,15 @@ async def validate_service_job(
 @mia_router.patch("/service-jobs/{job_id}/notes", response_model=ServiceJobResponse)
 async def update_additional_notes(
     job_id: str,
-    additional_notes: str,
+    payload: UpdateAdditionalNotesRequest,
     mia_service: MiaService = Depends(get_mia_service),
 ):
     try:
-        service_job = await mia_service.update_additional_notes(job_id, additional_notes)
+        if not payload.additional_notes:
+            raise ValueError("Additional notes cannot be empty")
+        
+        service_job = await mia_service.update_additional_notes(job_id, payload.additional_notes)
+    
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -2,7 +2,9 @@ from typing import TypedDict, Optional, Callable, Awaitable
 from fastapi import Depends
 import json
 from langgraph.graph import START, END, StateGraph
+from app.config.logger_config import setup_logger
 from app.model.response.service_job import ServiceJobResponse
+
 from app.constants.enums.mia_enums import ProcessingStage
 from app.model.response.customer import CustomerResponse
 from app.model.response.vehicle import VehicleResponse
@@ -26,6 +28,8 @@ from app.prompts.mia_prompts import (
 )
 
 StageUpdateCallback = Callable[[ProcessingStage, Optional[str]], Awaitable[None]]
+
+log = setup_logger(__name__)
 
 
 class MiaWorkflowState(TypedDict):
@@ -64,7 +68,10 @@ class MiaWorkflow:
     ) -> None:
         update_stage = state.get("update_stage")
         if update_stage:
-            await update_stage(stage, error)
+            try:
+                await update_stage(stage, error)
+            except Exception as e:
+                log.error(f"Failed to notify stage {stage}: {e}")
 
     async def fetch_service_job_data(self, state: MiaWorkflowState) -> MiaWorkflowState:
         await self._notify_stage(state, ProcessingStage.fetching_vehicle_data)
@@ -172,8 +179,6 @@ class MiaWorkflow:
             technical_plan=technical_plan,
             vehicle_model=vehicle_model,
         )
-
-        await self._notify_stage(state, ProcessingStage.completed)
 
         return {"enriched_plan": enriched}
 

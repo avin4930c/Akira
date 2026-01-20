@@ -11,6 +11,7 @@ from app.constants.enums.mia_enums import ServiceJobStatus, ProcessingStage
 from app.model.response.mia import EnrichedTechnicalPlan, MiaStageEvent
 from app.utils.mia_utils import service_job_to_response
 from app.model.sql_models.mia import ServiceJob
+from app.constants.mia import MIA_ADDITIONAL_NOTES_MAX_LENGTH
 
 class MiaService:
     def __init__(self, session: AsyncSession, sse_manager: SSEManager):
@@ -153,11 +154,17 @@ class MiaService:
         job_id: str,
         additional_notes: str,
     ) -> ServiceJob:
+        max_length = MIA_ADDITIONAL_NOTES_MAX_LENGTH
+        if len(additional_notes) > max_length:
+            raise ValueError(
+                f"Additional notes exceed maximum length of {max_length} characters"
+            )
+                
         service_job = await self.get_service_job_by_id(job_id)
         if not service_job:
             raise ValueError(f"Service job {job_id} not found")
         
-        service_job.additional_notes = additional_notes
+        service_job.additional_notes = additional_notes.strip()
         
         self.session.add(service_job)
         await self.session.commit()

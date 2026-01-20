@@ -1,8 +1,8 @@
 import asyncio
 import json
 from datetime import datetime
-from typing import AsyncGenerator, Dict, Optional, Any
-from dataclasses import dataclass, asdict
+from typing import AsyncGenerator, Dict, Any
+from dataclasses import dataclass
 
 from app.config.logger_config import setup_logger
 
@@ -58,9 +58,13 @@ class SSEManager:
             log.warning(f"SSE queue full for {event_id}, dropping oldest event")
             try:
                 queue.get_nowait()
-                queue.put_nowait(event.to_sse_format(event_type))
             except asyncio.QueueEmpty:
-                pass
+                log.debug(f"SSE queue unexpectedly empty for {event_id} when trying to drop oldest event")
+            
+            try: 
+                queue.put_nowait(event.to_sse_format(event_type))
+            except asyncio.QueueFull:
+                log.error(f"SSE queue still full for {event_id}, failed to publish event")
 
     async def subscribe(
         self,
@@ -69,23 +73,26 @@ class SSEManager:
     ) -> AsyncGenerator[str, None]:
         queue = await self._get_or_create_queue(event_id)
         
-        yield f"event: connected\ndata: {{\"event_id\": \"{event_id}\"}}\n\n"
-        
-        while True:
-            try:
-                event_data = await asyncio.wait_for(queue.get(), timeout=timeout)
-                yield event_data
-                
-                if event_data.startswith("event: completed") or event_data.startswith("event: error"):
-                    yield f"event: close\ndata: {{\"event_id\": \"{event_id}\"}}\n\n"
-                    break
+        try:
+            yield f"event: connected\ndata: {{\"event_id\": \"{event_id}\"}}\n\n"
+            
+            while True:
+                try:
+                    event_data = await asyncio.wait_for(queue.get(), timeout=timeout)
+                    yield event_data
                     
-            except asyncio.TimeoutError:
-                yield ": keepalive\n\n"
-                continue
-            except asyncio.CancelledError:
-                log.debug(f"SSE subscription cancelled for {event_id}")
-                break
+                    if event_data.startswith("event: completed") or event_data.startswith("event: error"):
+                        yield f"event: close\ndata: {{\"event_id\": \"{event_id}\"}}\n\n"
+                        break
+                        
+                except asyncio.TimeoutError:
+                    yield ": keepalive\n\n"
+                    continue
+                except asyncio.CancelledError:
+                    log.debug(f"SSE subscription cancelled for {event_id}")
+                    break
+        finally:
+            await self.unsubscribe(event_id)
 
     async def unsubscribe(self, event_id: str) -> None:
         async with self._lock:
