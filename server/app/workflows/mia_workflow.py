@@ -1,11 +1,14 @@
-from typing import TypedDict, Optional
+from typing import TypedDict, Optional, Callable, Awaitable
 from fastapi import Depends
 import json
 from langgraph.graph import START, END, StateGraph
-from app.model.request.mia import ServiceJobRequest
+from app.config.logger_config import setup_logger
+from app.model.response.service_job import ServiceJobResponse
+
+from app.constants.enums.mia_enums import ProcessingStage
 from app.model.response.customer import CustomerResponse
 from app.model.response.vehicle import VehicleResponse
-from app.model.response.mia_plan import (
+from app.model.response.mia import (
     TechnicalPlanResponse,
     EnrichedTechnicalPlan,
 )
@@ -24,15 +27,20 @@ from app.prompts.mia_prompts import (
     MIA_TECHNICAL_PLAN_PROMPT,
 )
 
+StageUpdateCallback = Callable[[ProcessingStage, Optional[str]], Awaitable[None]]
+
+log = setup_logger(__name__)
+
 
 class MiaWorkflowState(TypedDict):
-    service_job: ServiceJobRequest
+    service_job: ServiceJobResponse
     vehicle_data: Optional[VehicleResponse]
     customer_data: Optional[CustomerResponse]
     rag_context: Optional[str]
     web_search_results: Optional[str]
     technical_plan: Optional[TechnicalPlanResponse]
     enriched_plan: Optional[EnrichedTechnicalPlan]
+    update_stage: Optional[StageUpdateCallback]
 
 
 class MiaWorkflow:
@@ -52,7 +60,22 @@ class MiaWorkflow:
         self.inventory_service = inventory_service
         self.web_search_client = web_search_client
 
+    async def _notify_stage(
+        self,
+        state: MiaWorkflowState,
+        stage: ProcessingStage,
+        error: Optional[str] = None,
+    ) -> None:
+        update_stage = state.get("update_stage")
+        if update_stage:
+            try:
+                await update_stage(stage, error)
+            except Exception as e:
+                log.error(f"Failed to notify stage {stage}: {e}")
+
     async def fetch_service_job_data(self, state: MiaWorkflowState) -> MiaWorkflowState:
+        await self._notify_stage(state, ProcessingStage.fetching_vehicle_data)
+        
         vehicle_data = await self.vehicle_service.get_vehicle(
             state["service_job"].vehicle_id)
         customer_data = await self.customer_service.get_customer(
@@ -64,6 +87,8 @@ class MiaWorkflow:
         }
 
     async def retrieve_internal_knowledge(self, state: MiaWorkflowState) -> MiaWorkflowState:
+        await self._notify_stage(state, ProcessingStage.researching)
+        
         vehicle_model = f"{state['vehicle_data'].make} {state['vehicle_data'].model}"
         
         formatted_prompt = MIA_RAG_QUERY_GENERATION_PROMPT.format_messages(
@@ -107,6 +132,8 @@ class MiaWorkflow:
         return {"web_search_results": web_context}
 
     async def generate_technical_plan(self, state: MiaWorkflowState) -> MiaWorkflowState:
+        await self._notify_stage(state, ProcessingStage.generating_plan)
+        
         json_schema = json.dumps(TechnicalPlanResponse.model_json_schema(), indent=2)
         
         formatted_prompt = MIA_TECHNICAL_PLAN_PROMPT.format_messages(
@@ -137,7 +164,7 @@ class MiaWorkflow:
             ) from e
 
     async def inventory_lookup(self, state: MiaWorkflowState) -> MiaWorkflowState:
-        """Look up suggested parts in inventory and enrich the technical plan."""
+        await self._notify_stage(state, ProcessingStage.checking_inventory)
         
         technical_plan = state.get("technical_plan")
         if not technical_plan:

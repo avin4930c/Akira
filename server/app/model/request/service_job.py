@@ -20,3 +20,6 @@ class ServiceJobRequest(BaseModel):
     def set_created_at(cls, v):
         """Default to current time if created_at is None or not provided."""
         return v or datetime.utcnow()
+    
+class UpdateAdditionalNotesRequest(BaseModel):
+    additional_notes: str

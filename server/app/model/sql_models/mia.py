@@ -1,13 +1,13 @@
 from enum import Enum
 from sqlmodel import SQLModel, Field
-from sqlalchemy import Column
+from sqlalchemy import Column, Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from pgvector.sqlalchemy import Vector
 from typing import List
 from typing import Optional
 from datetime import datetime
 from uuid import uuid4
-from app.constants.enums.mia_enums import ServiceJobStatus
+from app.constants.enums.mia_enums import ServiceJobStatus, ProcessingStage
 from app.constants.rag import EMBEDDING_DIMENSION
 
 
@@ -49,9 +49,20 @@ class ServiceJob(SQLModel, table=True):
     customer_id: str = Field(foreign_key="customer.id", index=True)
     vehicle_id: str = Field(foreign_key="vehicle.id", index=True)
     mechanic_id: str = Field(foreign_key="mechanic.id", index=True)
-    status: ServiceJobStatus = Field(default=ServiceJobStatus.pending)
-    service_info: str
-    mechanic_notes: str
+    status: ServiceJobStatus = Field(
+        default=ServiceJobStatus.pending,
+        sa_column=Column(SAEnum(ServiceJobStatus, native_enum=False), nullable=False)
+    )
+    service_info: str = Field()
+    mechanic_notes: str = Field()
+    enriched_technical_plan: Optional[dict] = Field(default=None, sa_column=Column(JSONB))
+    additional_notes: Optional[str] = Field(default=None)
+    processing_stage: Optional[ProcessingStage] = Field(
+        default=None,
+        sa_column=Column(SAEnum(ProcessingStage, native_enum=False), nullable=True)
+    )
+    stage_updated_at: Optional[datetime] = Field(default=None)
+    error_details: Optional[str] = Field(default=None)
     validated_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
