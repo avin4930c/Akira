@@ -1,7 +1,7 @@
 import { Wrench, Clock, AlertTriangle, ToolCase } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { RepairTask } from "@/types/mia";
-import { difficultyColors, taskCategoryColors } from "@/app/utils/miaValidationUtils";
+import { difficultyColors, taskCategoryColors } from "@/constants/mia/colors";
 
 export function RepairTasksSection({ tasks }: { tasks: RepairTask[] }) {
     return (

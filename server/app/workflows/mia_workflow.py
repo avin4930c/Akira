@@ -2,6 +2,7 @@ from typing import TypedDict, Optional, Callable, Awaitable
 from fastapi import Depends
 import json
 from langgraph.graph import START, END, StateGraph
+from sqlmodel.ext.asyncio.session import AsyncSession
 from app.config.logger_config import setup_logger
 from app.model.response.service_job import ServiceJobResponse
 
@@ -18,8 +19,9 @@ from app.clients.web_search_clients.base_web_search_client import BaseWebSearchC
 from app.clients.web_search_clients.tavily_client import get_tavily_client
 from app.services.vehicle_service import VehicleService, get_vehicle_service
 from app.services.customer_service import CustomerService, get_customer_service
-from app.services.rag_service import RAGService, get_rag_service
+from app.services.rag_service import RAGService, get_rag_service, get_embedding_provider
 from app.services.inventory_service import InventoryService, get_inventory_service
+from app.clients.embedding_clients.lmstudio_embedding_client import get_lmstudio_embedding_client
 from app.utils.rag_utils import format_rag_context
 from app.prompts.mia_prompts import (
     MIA_RAG_QUERY_GENERATION_PROMPT,
@@ -217,4 +219,29 @@ def get_mia_workflow(
         rag_service=rag_service,
         inventory_service=inventory_service,
         web_search_client=web_search_client,
+    ).get_workflow()
+
+
+def create_mia_workflow_with_session(session: AsyncSession) -> StateGraph:
+    embedding_provider = get_embedding_provider()
+    inventory_embedding_client = get_lmstudio_embedding_client().get_embedding_client()
+    
+    vehicle_service = VehicleService(session)
+    customer_service = CustomerService(session)
+    rag_service = RAGService(
+        session=session,
+        embedding_provider=embedding_provider,
+    )
+    inventory_service = InventoryService(
+        session=session,
+        embedding_client=inventory_embedding_client,
+    )
+    
+    return MiaWorkflow(
+        llm_provider=get_gemini_llm_client(),
+        customer_service=customer_service,
+        vehicle_service=vehicle_service,
+        rag_service=rag_service,
+        inventory_service=inventory_service,
+        web_search_client=get_tavily_client(),
     ).get_workflow()

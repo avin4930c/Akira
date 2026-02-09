@@ -9,12 +9,14 @@ export function SelectVehicleControl({
   onChange,
   visible,
   loading,
+  disabled = false,
 }: {
   options: SelectOption[];
   value: string;
   onChange: (v: string) => void;
   visible: boolean;
   loading: boolean;
+  disabled?: boolean;
 }) {
   if (!visible) return null;
   return (
@@ -40,6 +42,7 @@ export function SelectVehicleControl({
           placeholder="Choose a vehicle..."
           searchPlaceholder="Search vehicles..."
           emptyText="No vehicles found."
+          disabled={disabled}
         />
       )}
     </motion.div>

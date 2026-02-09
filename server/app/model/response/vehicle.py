@@ -1,9 +1,11 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class VehicleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: str
     customer_id: str
     make: str

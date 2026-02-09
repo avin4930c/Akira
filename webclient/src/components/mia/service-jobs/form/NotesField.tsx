@@ -1,7 +1,7 @@
 import { TextareaField } from "@/components/mia/common/TextareaField";
 import { MAX_NOTES_LENGTH, MIN_NOTES_LENGTH } from "@/constants/notesFieldConstants";
 
-export function NotesField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function NotesField({ value, onChange, disabled = false }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
   return (
     <TextareaField
       id="notes"
@@ -12,6 +12,7 @@ export function NotesField({ value, onChange }: { value: string; onChange: (v: s
       minLength={MIN_NOTES_LENGTH}
       maxLength={MAX_NOTES_LENGTH}
       minHeight="min-h-[200px]"
+      disabled={disabled}
     />
   );
 }

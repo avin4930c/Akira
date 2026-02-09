@@ -6,9 +6,10 @@ interface SelectCustomerControlProps {
     value: string;
     onChange: (v: string) => void;
     loading?: boolean;
+    disabled?: boolean;
 }
 
-export function SelectCustomerControl({ options, value, onChange, loading = false }: SelectCustomerControlProps) {
+export function SelectCustomerControl({ options, value, onChange, loading = false, disabled = false }: SelectCustomerControlProps) {
     return (
         <SelectField
             id="customer"
@@ -20,6 +21,7 @@ export function SelectCustomerControl({ options, value, onChange, loading = fals
             searchPlaceholder="Search by Customer Id"
             emptyText="No customers found."
             loading={loading}
+            disabled={disabled}
         />
     );
 }

@@ -13,6 +13,7 @@ interface SelectFieldProps {
   emptyText: string;
   loading?: boolean;
   required?: boolean;
+  disabled?: boolean;
 }
 
 export function SelectField({
@@ -26,6 +27,7 @@ export function SelectField({
   emptyText,
   loading = false,
   required = true,
+  disabled = false,
 }: SelectFieldProps) {
   return (
     <div className="space-y-2">
@@ -40,6 +42,7 @@ export function SelectField({
         searchPlaceholder={searchPlaceholder}
         emptyText={emptyText}
         loading={loading}
+        disabled={disabled}
       />
     </div>
   );

@@ -1,6 +1,8 @@
 import { Car, Calendar, Gauge } from "lucide-react";
+import { CopyButton } from "@/components/common/CopyButton";
 
 interface VehicleSpecsCardProps {
+    vehicleId: string;
     make: string;
     model: string;
     year: number;
@@ -10,7 +12,7 @@ interface VehicleSpecsCardProps {
     last_service_date?: string;
 }
 
-export function VehicleSpecsCard({ make, model, year, registration, mileage, engine_type, last_service_date }: VehicleSpecsCardProps) {
+export function VehicleSpecsCard({ vehicleId, make, model, year, registration, mileage, engine_type, last_service_date }: VehicleSpecsCardProps) {
     return (
         <div className="glass-card p-6 rounded-xl">
             <div className="flex items-center gap-3 mb-6">
@@ -21,6 +23,13 @@ export function VehicleSpecsCard({ make, model, year, registration, mileage, eng
             </div>
 
             <div className="grid grid-cols-2 gap-4">
+                <div>
+                <div className="text-sm text-muted-foreground">Vehicle ID</div>
+                <div className="flex items-center gap-2 mt-1">
+                    <div className="font-mono text-sm">{vehicleId}</div>
+                    <CopyButton text={vehicleId} />
+                </div>
+                </div>
                 <div>
                     <div className="text-sm text-muted-foreground">Make</div>
                     <div className="font-medium mt-1">{make}</div>
@@ -51,7 +60,7 @@ export function VehicleSpecsCard({ make, model, year, registration, mileage, eng
                     <div className="text-sm text-muted-foreground">Engine Type</div>
                     <div className="font-medium mt-1">{engine_type}</div>
                 </div>
-                <div className="col-span-2">
+                <div>
                     <div className="text-sm text-muted-foreground">Last Service Date</div>
                     <div className="font-medium mt-1">
                         {last_service_date ? new Date(last_service_date).toLocaleDateString() : "N/A"}

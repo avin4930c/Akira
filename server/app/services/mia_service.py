@@ -3,15 +3,19 @@ from typing import Optional
 from fastapi import Depends
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.orm import selectinload
 from langgraph.graph.state import CompiledStateGraph
 from app.core.database import get_session, async_engine
 from app.core.sse_manager import SSEManager, get_sse_manager, sse_manager as global_sse_manager
+from app.workflows.mia_workflow import create_mia_workflow_with_session
 from app.model.request.service_job import ServiceJobRequest
 from app.constants.enums.mia_enums import ServiceJobStatus, ProcessingStage
 from app.model.response.mia import EnrichedTechnicalPlan, MiaStageEvent
-from app.utils.mia_utils import service_job_to_response
+from app.model.response.service_job import ServiceJobListResponse
 from app.model.sql_models.mia import ServiceJob
 from app.constants.mia import MIA_ADDITIONAL_NOTES_MAX_LENGTH
+from app.utils.mia_utils import service_job_to_response, service_job_to_list_response
+
 
 class MiaService:
     def __init__(self, session: AsyncSession, sse_manager: SSEManager):
@@ -26,9 +30,9 @@ class MiaService:
         
         self.session.add(service_job)
         await self.session.commit()
-        await self.session.refresh(service_job)
         
-        return service_job
+        job_id = service_job_data.id
+        return await self.get_service_job_by_id(job_id)
     
     async def update_processing_stage(
         self,
@@ -108,27 +112,36 @@ class MiaService:
             await self.mark_failed(job_id, str(e))
     
     async def get_service_job_by_id(self, job_id: str) -> ServiceJob | None:
-        statement = select(ServiceJob).where(ServiceJob.id == job_id)
+        statement = (
+            select(ServiceJob)
+            .where(ServiceJob.id == job_id)
+            .options(selectinload(ServiceJob.customer), selectinload(ServiceJob.vehicle))
+        )
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
     
     async def list_service_jobs(
         self,
-        mechanic_id: Optional[str] = None,
+        vehicle_id: Optional[str] = None,
         status: Optional[ServiceJobStatus] = None,
         limit: int = 50,
-    ) -> list[ServiceJob]:
-        statement = select(ServiceJob)
+    ) -> list[ServiceJobListResponse]:
+        statement = (
+            select(ServiceJob)
+            .options(selectinload(ServiceJob.customer), selectinload(ServiceJob.vehicle))
+        )
         
-        if mechanic_id:
-            statement = statement.where(ServiceJob.mechanic_id == mechanic_id)
+        if vehicle_id:
+            statement = statement.where(ServiceJob.vehicle_id == vehicle_id)
         if status:
             statement = statement.where(ServiceJob.status == status)
             
         statement = statement.order_by(ServiceJob.created_at.desc()).limit(limit)
         
         result = await self.session.execute(statement)
-        return list(result.scalars().all())
+        jobs = list(result.scalars().all())
+        
+        return [service_job_to_list_response(job) for job in jobs]
     
     async def save_enriched_plan(
         self,
@@ -146,6 +159,18 @@ class MiaService:
         self.session.add(service_job)
         await self.session.commit()
         await self.session.refresh(service_job)
+        
+        event_data = MiaStageEvent(
+            stage=ProcessingStage.completed.value,
+            stage_label=ProcessingStage.completed.label,
+            progress=ProcessingStage.completed.progress,
+            error=None,
+        )
+        await self.sse_manager.publish(
+            event_id=job_id,
+            data=event_data.model_dump(),
+            event_type="completed",
+        )
         
         return service_job
     
@@ -177,15 +202,18 @@ class MiaService:
         if not service_job:
             raise ValueError(f"Service job {job_id} not found")
         
+        if service_job.status == ServiceJobStatus.validated:
+            raise ValueError(f"Service job {job_id} is already validated")
+        
         if service_job.status != ServiceJobStatus.completed:
             raise ValueError(
                 f"Cannot validate job {job_id} with status {service_job.status}. "
                 "Job must be completed first."
             )
-        
+            
         service_job.status = ServiceJobStatus.validated
         service_job.validated_at = datetime.utcnow()
-        
+    
         self.session.add(service_job)
         await self.session.commit()
         await self.session.refresh(service_job)
@@ -231,10 +259,8 @@ def get_mia_service(
     return MiaService(session=db, sse_manager=sse_manager)
 
 
-async def run_mia_workflow_background(
-    job_id: str,
-    workflow: CompiledStateGraph,
-) -> None:
-    async with AsyncSession(async_engine) as session: #New session cuz of greenlet conflict
+async def run_mia_workflow_background(job_id: str) -> None:
+    async with AsyncSession(async_engine) as session:
+        workflow = create_mia_workflow_with_session(session)
         service = MiaService(session=session, sse_manager=global_sse_manager)
         await service.run_workflow(job_id, workflow)

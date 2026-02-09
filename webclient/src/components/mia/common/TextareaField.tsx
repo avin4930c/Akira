@@ -11,6 +11,7 @@ interface TextareaFieldProps {
   maxLength: number;
   minHeight?: string;
   required?: boolean;
+  disabled?: boolean;
 }
 
 export function TextareaField({
@@ -23,6 +24,7 @@ export function TextareaField({
   maxLength,
   minHeight = "min-h-[120px]",
   required = true,
+  disabled = false,
 }: TextareaFieldProps) {
   return (
     <div className="space-y-2">
@@ -37,6 +39,7 @@ export function TextareaField({
         className={`glass-card ${minHeight} resize-none`}
         minLength={minLength}
         maxLength={maxLength}
+        disabled={disabled}
       />
       <p className="text-xs text-muted-foreground">
         {value.length}/{maxLength} characters

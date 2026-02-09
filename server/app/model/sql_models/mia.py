@@ -1,5 +1,5 @@
 from enum import Enum
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from pgvector.sqlalchemy import Vector
@@ -65,6 +65,10 @@ class ServiceJob(SQLModel, table=True):
     error_details: Optional[str] = Field(default=None)
     validated_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    customer: Optional["Customer"] = Relationship()
+    vehicle: Optional["Vehicle"] = Relationship()
+    mechanic: Optional["Mechanic"] = Relationship()
 
 
 class PartInventory(SQLModel, table=True):

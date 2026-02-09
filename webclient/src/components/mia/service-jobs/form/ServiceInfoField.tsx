@@ -1,7 +1,7 @@
 import { TextareaField } from "@/components/mia/common/TextareaField";
 import { MAX_SERVICE_INFO_LENGTH, MIN_SERVICE_INFO_LENGTH } from "@/constants/notesFieldConstants";
 
-export function ServiceInfoField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function ServiceInfoField({ value, onChange, disabled = false }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
   return (
     <TextareaField
       id="service-info"
@@ -12,6 +12,7 @@ export function ServiceInfoField({ value, onChange }: { value: string; onChange:
       minLength={MIN_SERVICE_INFO_LENGTH}
       maxLength={MAX_SERVICE_INFO_LENGTH}
       minHeight="min-h-[120px]"
+      disabled={disabled}
     />
   );
 }

@@ -3,13 +3,11 @@ from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import StreamingResponse
-from langgraph.graph.state import CompiledStateGraph
 
 from app.config.logger_config import setup_logger
 from app.core.sse_manager import SSEManager, get_sse_manager
-from app.workflows.mia_workflow import get_mia_workflow
 from app.model.request.service_job import ServiceJobRequest, UpdateAdditionalNotesRequest
-from app.model.response.service_job import ServiceJobResponse
+from app.model.response.service_job import ServiceJobResponse, ServiceJobListResponse
 from app.constants.enums.mia_enums import ProcessingStage
 from app.services.mia_service import MiaService, get_mia_service, run_mia_workflow_background
 from app.utils.mia_utils import service_job_to_response
@@ -23,14 +21,12 @@ async def create_service_job(
     payload: ServiceJobRequest,
     background_tasks: BackgroundTasks,
     mia_service: MiaService = Depends(get_mia_service),
-    workflow: CompiledStateGraph = Depends(get_mia_workflow),
 ):
     service_job = await mia_service.create_service_job(payload)
     
     background_tasks.add_task(
         run_mia_workflow_background,
         service_job.id,
-        workflow,
     )
     
     log.info(f"Started processing for job {service_job.id}")
@@ -101,13 +97,12 @@ async def get_service_job(
     return service_job_to_response(service_job)
 
 
-@mia_router.get("/service-jobs", response_model=list[ServiceJobResponse])
+@mia_router.get("/service-jobs", response_model=list[ServiceJobListResponse])
 async def list_service_jobs(
-    mechanic_id: Optional[str] = None,
+    vehicle_id: Optional[str] = None,
     mia_service: MiaService = Depends(get_mia_service),
 ):
-    jobs = await mia_service.list_service_jobs(mechanic_id=mechanic_id)
-    return [service_job_to_response(job) for job in jobs]
+    return await mia_service.list_service_jobs(vehicle_id=vehicle_id)
 
 
 @mia_router.patch("/service-jobs/{job_id}/validate", response_model=ServiceJobResponse)
