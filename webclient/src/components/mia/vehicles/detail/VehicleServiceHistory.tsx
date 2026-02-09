@@ -1,7 +1,16 @@
-import { Wrench } from "lucide-react";
-import type { ServiceJob } from "@/types/mia";
+"use client";
 
-export function VehicleServiceHistory({ jobs }: { jobs: ServiceJob[] }) {
+import { Wrench } from "lucide-react";
+import { useRouter } from "next/navigation";
+import type { ServiceJobList } from "@/types/mia";
+import { ServiceJobStatusBadge } from "@/components/mia/service-jobs/components/ServiceJobStatusBadge";
+
+interface VehicleServiceHistoryProps {
+  jobs: ServiceJobList[];
+}
+
+export function VehicleServiceHistory({ jobs }: VehicleServiceHistoryProps) {
+  const router = useRouter();
   return (
     <div className="glass-card p-6 rounded-xl">
       <div className="flex items-center gap-3 mb-6">
@@ -16,13 +25,16 @@ export function VehicleServiceHistory({ jobs }: { jobs: ServiceJob[] }) {
       ) : (
         <div className="space-y-4">
           {jobs.map((job) => (
-            <div key={job.id} className="p-4 rounded-lg border border-border/50 hover:bg-secondary/30 transition-colors">
+            <div 
+              key={job.id} 
+              className="p-4 rounded-lg border border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
+              onClick={() => router.push(`/mia/service-jobs/${job.id}`)}
+            >
               <div className="flex items-center justify-between mb-2">
-                <span className="font-medium">Service Job #{job.id}</span>
-                <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary">{job.status}</span>
+                <span className="font-mono text-sm">{job.id.slice(0, 8).toUpperCase()}</span>
+                <ServiceJobStatusBadge status={job.status} />
               </div>
-              <p className="text-sm text-muted-foreground">{job.service_info}</p>
-              <p className="text-sm text-muted-foreground/80 mt-1">Notes: {job.mechanic_notes}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{job.service_info}</p>
               <div className="text-xs text-muted-foreground mt-2">
                 {new Date(job.created_at).toLocaleDateString()}
               </div>

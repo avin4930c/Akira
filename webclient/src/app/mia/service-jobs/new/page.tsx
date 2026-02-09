@@ -4,12 +4,11 @@ import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { useMiaStore } from "@/stores/mia-data-store";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ServiceJobStatus } from "@/types/mia";
 import { useCustomers } from "@/hooks/customer/useCustomer";
 import { useVehiclesByCustomerId } from "@/hooks/vehicles/useVehicles";
+import { useMechanics } from "@/hooks/mechanic/useMechanic";
 import { CardSkeleton } from "@/components/mia/common/LoadingSkeleton";
 import { NewServiceJobHeader } from "@/components/mia/service-jobs/form/NewServiceJobHeader";
 import { SelectCustomerControl } from "@/components/mia/service-jobs/form/SelectCustomerControl";
@@ -18,6 +17,8 @@ import { SelectMechanicControl } from "@/components/mia/service-jobs/form/Select
 import { ServiceInfoField } from "@/components/mia/service-jobs/form/ServiceInfoField";
 import { NotesField } from "@/components/mia/service-jobs/form/NotesField";
 import { FormActions } from "@/components/mia/service-jobs/form/FormActions";
+import { useCreateServiceJob } from "@/hooks/service-job/useServiceJob";
+import { v4 as uuidv4 } from "uuid";
 
 function NewServiceJobContent() {
     const router = useRouter();
@@ -33,23 +34,28 @@ function NewServiceJobContent() {
     useEffect(() => {
         const customerFromUrl = searchParams?.get("customer");
         const vehicleFromUrl = searchParams?.get("vehicle");
-
-        if (customerFromUrl) {
-            setSelectedCustomer(customerFromUrl);
-        }
-        if (vehicleFromUrl) {
-            setSelectedVehicle(vehicleFromUrl);
-        }
+        
+        if (customerFromUrl) setSelectedCustomer(customerFromUrl);
+        if (vehicleFromUrl) setSelectedVehicle(vehicleFromUrl);
     }, [searchParams]);
 
     const { data: allCustomers, isLoading: loadingCustomers } = useCustomers();
     const { data: customerVehicles, isLoading: loadingVehicles } = useVehiclesByCustomerId(selectedCustomer);
+    const { data: allMechanics, isLoading: loadingMechanics } = useMechanics();
 
-    const { mechanics, addServiceJob } = useMiaStore();
+    const createMutation = useCreateServiceJob({
+        onSuccess: (job) => {
+            toast.success("Service job created! Redirecting to processing...");
+            router.push(`/mia/service-jobs/${job.id}`);
+        },
+        onError: (error) => {
+            toast.error(`Failed to create: ${error.message}`);
+        },
+    });
 
     useEffect(() => {
         if (!searchParams.get("vehicle")) setSelectedVehicle("");
-    }, [selectedCustomer]);
+    }, [selectedCustomer, searchParams]);
 
     const customerOptions = (allCustomers || []).map((c) => ({
         value: c.id,
@@ -65,76 +71,61 @@ function NewServiceJobContent() {
         }))
         : [];
 
-    const mechanicOptions = mechanics.map((m) => ({
+    const mechanicOptions = (allMechanics || []).map((m) => ({
         value: m.id,
         label: m.name,
         subtitle: m.mechanic_code,
     }));
 
-    const handleValidate = () => {
+    const validateForm = (): boolean => {
         const trimmedNotes = notes.trim();
         const trimmedServiceInfo = serviceInfo.trim();
 
         if (!selectedCustomer || !selectedVehicle || !selectedMechanic) {
             toast.error("Please fill all required fields");
-            return;
+            return false;
         }
         if (!trimmedServiceInfo || trimmedServiceInfo.length < 5) {
             setShowWarning(true);
-            return;
+            return false;
         }
         if (!trimmedNotes || trimmedNotes.length < 10) {
             setShowWarning(true);
-            return;
+            return false;
         }
-
-        addServiceJob({
-            customer_id: selectedCustomer,
-            vehicle_id: selectedVehicle,
-            mechanic_id: selectedMechanic,
-            service_info: trimmedServiceInfo,
-            mechanic_notes: trimmedNotes,
-            status: ServiceJobStatus.Validated,
-        });
-
-        toast.success("Service job validated and created successfully!");
-        router.push("/mia/service-jobs");
+        return true;
     };
 
-    const handleSaveDraft = () => {
-        const trimmedServiceInfo = serviceInfo.trim();
+    const handleSubmit = () => {
+        if (!validateForm()) return;
 
-        if (!selectedCustomer || !selectedVehicle || !selectedMechanic) {
-            toast.error("Please fill all required fields");
-            return;
-        }
-        if (!trimmedServiceInfo || trimmedServiceInfo.length < 5) {
-            toast.error("Please provide service information (minimum 5 characters)");
-            return;
-        }
-
-        addServiceJob({
+        createMutation.mutate({
+            id: uuidv4(),
             customer_id: selectedCustomer,
             vehicle_id: selectedVehicle,
             mechanic_id: selectedMechanic,
-            service_info: trimmedServiceInfo,
+            service_info: serviceInfo.trim(),
             mechanic_notes: notes.trim(),
-            status: ServiceJobStatus.Pending,
         });
+    };
 
-        toast.success("Service job saved as draft");
+    const handleCancel = () => {
         router.push("/mia/service-jobs");
     };
+
+    const isSubmitting = createMutation.isPending;
 
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto space-y-6">
             <NewServiceJobHeader />
+
             <div className="glass-card p-8 rounded-xl space-y-6">
                 <SelectCustomerControl
                     options={customerOptions}
                     value={selectedCustomer}
                     onChange={(v) => { setSelectedCustomer(v); setShowWarning(false); }}
                     loading={loadingCustomers}
+                    disabled={isSubmitting}
                 />
 
                 <SelectVehicleControl
@@ -143,29 +134,46 @@ function NewServiceJobContent() {
                     onChange={(v) => { setSelectedVehicle(v); setShowWarning(false); }}
                     visible={!!selectedCustomer}
                     loading={loadingVehicles}
+                    disabled={isSubmitting}
                 />
 
-                <SelectMechanicControl options={mechanicOptions} value={selectedMechanic} onChange={(v) => { setSelectedMechanic(v); setShowWarning(false); }} />
+                <SelectMechanicControl 
+                    options={mechanicOptions} 
+                    value={selectedMechanic} 
+                    onChange={(v) => { setSelectedMechanic(v); setShowWarning(false); }} 
+                    disabled={isSubmitting}
+                    loading={loadingMechanics}
+                />
 
-                <ServiceInfoField value={serviceInfo} onChange={(v) => { setServiceInfo(v); setShowWarning(false); }} />
+                <ServiceInfoField 
+                    value={serviceInfo} 
+                    onChange={(v) => { setServiceInfo(v); setShowWarning(false); }} 
+                    disabled={isSubmitting}
+                />
 
-                <NotesField value={notes} onChange={(v) => { setNotes(v); setShowWarning(false); }} />
+                <NotesField 
+                    value={notes} 
+                    onChange={(v) => { setNotes(v); setShowWarning(false); }} 
+                    disabled={isSubmitting}
+                />
 
                 {showWarning && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                         <Alert className="border-yellow-500/50 bg-yellow-500/10">
                             <AlertCircle className="h-4 w-4 text-yellow-500" />
                             <AlertDescription className="text-yellow-500">
-                                Missing data detected. Please provide service information and detailed symptoms/diagnosis before validation (minimum 5 characters for service info, 10 for notes).
+                                Missing data detected. Please provide service information and detailed symptoms/diagnosis before submission (minimum 5 characters for service info, 10 for notes).
                             </AlertDescription>
                         </Alert>
                     </motion.div>
                 )}
 
                 <FormActions
-                    onValidate={handleValidate}
-                    onSaveDraft={handleSaveDraft}
-                    disabled={!selectedCustomer || !selectedVehicle || !selectedMechanic || !serviceInfo.trim()}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                    disabled={!selectedCustomer || !selectedVehicle || !selectedMechanic || !serviceInfo.trim() || isSubmitting}
+                    submitLabel={isSubmitting ? "Creating..." : "Create Service Job"}
+                    loading={isSubmitting}
                 />
             </div>
         </motion.div>

@@ -1,7 +1,7 @@
 import { Lightbulb } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { MechanicTip } from "@/types/mia";
-import { tipCategoryConfig } from "@/app/utils/miaValidationUtils";
+import { tipCategoryConfig } from "@/constants/mia/icons";
 
 export function TipsSection({ tips }: { tips: MechanicTip[] }) {
     return (

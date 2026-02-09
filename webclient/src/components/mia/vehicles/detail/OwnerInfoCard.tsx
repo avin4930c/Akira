@@ -1,4 +1,5 @@
 import { Mail, Phone, User } from "lucide-react";
+import { CopyButton } from "@/components/common/CopyButton";
 
 interface OwnerInfoCardProps {
     name: string;
@@ -38,7 +39,10 @@ export function OwnerInfoCard({ name, phone, email, userId }: OwnerInfoCardProps
                 </div>
                 <div>
                     <div className="text-sm text-muted-foreground">User ID</div>
-                    <div className="font-mono text-sm mt-1">{userId}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                        <div className="font-mono text-sm">{userId}</div>
+                        <CopyButton text={userId} />
+                    </div>
                 </div>
             </div>
         </div>

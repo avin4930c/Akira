@@ -1,7 +1,8 @@
 import { Clock, AlertTriangle, FileText, CalendarClock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { JobSummaryProps } from "@/types/mia";
-import { formatEstimatedTime, priorityConfig } from "@/app/utils/serviceJobUtils";
+import { priorityColors } from "@/constants/mia/colors";
+import { formatEstimatedTime } from "@/utils/mia/formatters";
 
 export function JobSummaryFooter({
     estimatedTotalMinutes,
@@ -35,7 +36,7 @@ export function JobSummaryFooter({
                             <div className="text-sm text-muted-foreground">Priority Level</div>
                             <Badge
                                 variant="outline"
-                                className={`${priorityConfig[priorityLevel].color} text-base font-semibold mt-1`}
+                                className={`${priorityColors[priorityLevel].color} text-base font-semibold mt-1`}
                             >
                                 {priorityLevel.toUpperCase()}
                             </Badge>

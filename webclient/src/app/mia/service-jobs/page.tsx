@@ -1,19 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { Wrench } from "lucide-react";
 import EmptyState from "@/components/mia/common/EmptyState";
 import { TableSkeleton } from "@/components/mia/common/LoadingSkeleton";
 import { useRouter } from "next/navigation";
-import { useMiaStore } from "@/stores/mia-data-store";
 import { ServiceJobsHeader } from "@/components/mia/service-jobs/list/ServiceJobsHeader";
 import { ServiceJobsTable } from "@/components/mia/service-jobs/list/ServiceJobsTable";
+import { useServiceJobs } from "@/hooks/service-job/useServiceJob";
 
 export default function ServiceJobsPage() {
   const router = useRouter();
-  const [isLoading] = useState(false);
-  const { serviceJobs } = useMiaStore();
+  const { data: serviceJobs, error, isLoading } = useServiceJobs();
 
   if (isLoading) {
     return (
@@ -24,7 +22,11 @@ export default function ServiceJobsPage() {
     );
   }
 
-  if (serviceJobs.length === 0) {
+  if (error) {
+    return <div className="text-red-500">Error loading service jobs.</div>;
+  }
+
+  if (!serviceJobs || serviceJobs.length === 0) {
     return (
       <EmptyState
         icon={Wrench}

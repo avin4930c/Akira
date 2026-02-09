@@ -26,6 +26,7 @@ interface SearchableSelectProps {
     className?: string;
     onSearchChange?: (value: string) => void;
     loading?: boolean;
+    disabled?: boolean;
 }
 
 export function SearchableSelect({
@@ -38,6 +39,7 @@ export function SearchableSelect({
     className,
     onSearchChange,
     loading = false,
+    disabled = false,
 }: SearchableSelectProps) {
     const [open, setOpen] = React.useState(false);
 
@@ -50,6 +52,7 @@ export function SearchableSelect({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
+                    disabled={disabled}
                     className={cn("w-full justify-between bg-background border-input hover:bg-background", className)}
                 >
                     {selectedOption ? (

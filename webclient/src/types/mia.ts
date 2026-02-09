@@ -1,8 +1,19 @@
-export enum ServiceJobStatus { 
+export enum ServiceJobStatus {
   Pending = "pending",
   InProgress = "in-progress",
   Completed = "completed",
   Validated = "validated",
+  Failed = "failed",
+}
+
+export enum ProcessingStage {
+  Queued = "queued",
+  FetchingVehicleData = "fetching_vehicle_data",
+  Researching = "researching",
+  GeneratingPlan = "generating_plan",
+  CheckingInventory = "checking_inventory",
+  Completed = "completed",
+  Failed = "failed",
 }
 
 export enum TaskDifficultyLevel {
@@ -72,16 +83,26 @@ export interface Mechanic {
   mechanic_code: string;
 }
 
-export interface ServiceJob {
+export interface ServiceJobList {
   id: string;
   customer_id: string;
+  customer?: Customer;
   vehicle_id: string;
+  vehicle?: Vehicle;
   mechanic_id: string;
   status: ServiceJobStatus;
   service_info: string;
   mechanic_notes: string;
+  additional_notes?: string;
+  processing_stage?: ProcessingStage;
+  stage_updated_at?: string;
+  error_details?: string;
   validated_at?: string;
   created_at: string;
+}
+
+export interface ServiceJob extends ServiceJobList {
+  enriched_technical_plan?: EnrichedTechnicalPlan;
 }
 
 export interface SuggestedPart {
@@ -169,4 +190,17 @@ export interface JobSummaryProps {
   priorityLevel: ServiceJobPriorityLevel;
   warrantyNotes?: string;
   followUpRecommendations?: string;
+}
+
+export interface CreateServiceJobRequest {
+  id: string;
+  customer_id: string;
+  vehicle_id: string;
+  mechanic_id: string;
+  service_info: string;
+  mechanic_notes: string;
+}
+
+export interface UpdateNotesRequest {
+  additional_notes: string;
 }
