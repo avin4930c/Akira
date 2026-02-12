@@ -64,7 +64,7 @@ class SSEManager:
         log.debug(f"Subscribed to Redis channel {channel}")
 
         try:
-            yield f"event: connected\ndata: {{\"event_id\": \"{event_id}\"}}\n\n"
+            yield f"event: connected\ndata: {json.dumps({'event_id': event_id})}\n\n"
 
             while True:
                 try:
@@ -84,7 +84,7 @@ class SSEManager:
                     yield sse_formatted
 
                     if event_type in ("completed", "error"):
-                        yield f"event: close\ndata: {{\"event_id\": \"{event_id}\"}}\n\n"
+                        yield f"event: close\ndata: {json.dumps({'event_id': event_id})}\n\n"
                         break
 
                 except asyncio.TimeoutError:

@@ -67,9 +67,7 @@ async def stream_job_status(
                 "error": service_job.error_details,
             })
             yield f"event: {event_type}\ndata: {data}\n\n"
-            yield f"event: close\ndata: {{\"event_id\": \"{job_id}\"}}\n\n"
-
-            await sse_manager.unsubscribe(job_id)
+            yield f"event: close\ndata: {json.dumps({'event_id': job_id})}\n\n"
         
         return StreamingResponse(
             immediate_response(),

@@ -50,7 +50,16 @@ async def process_message(message: AbstractIncomingMessage) -> None:
             log.warning(f"[Worker] Job {job_id} exceeded max retries, sending to DLQ")
             await message.reject(requeue=False)
         else:
-            await message.reject(requeue=True)
+            log.info(f"[Worker] Requeuing job {job_id} with retry count {retry_count + 1}")
+            new_headers = dict(message.headers) if message.headers else {}
+            new_headers[WORKER_RETRY_HEADER] = str(retry_count + 1)
+            
+            await rabbitmq_manager.publish(
+                queue_name=MIA_WORKFLOW_QUEUE,
+                body=body,
+                headers=new_headers,
+            )
+            await message.ack()
 
 
 async def run_worker() -> None:

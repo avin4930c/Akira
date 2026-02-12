@@ -50,7 +50,7 @@ class RabbitMQManager:
             await self._connection.close()
             log.info("RabbitMQ connection closed")
 
-    async def publish(self, queue_name: str, body: dict[str, Any]) -> None:
+    async def publish(self, queue_name: str, body: dict[str, Any], headers: dict[str, str] | None = None) -> None:
         if not self._channel:
             raise RuntimeError("RabbitMQ channel is not initialized. Call connect() first.")
 
@@ -58,6 +58,7 @@ class RabbitMQManager:
             body=json.dumps(body).encode(),
             delivery_mode=DeliveryMode.PERSISTENT,
             content_type="application/json",
+            headers=headers,
         )
 
         await self._channel.default_exchange.publish(
