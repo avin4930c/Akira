@@ -5,6 +5,7 @@ from typing import AsyncGenerator, Dict, Any
 from dataclasses import dataclass
 
 from app.config.logger_config import setup_logger
+from app.core.redis_manager import redis_manager
 
 log = setup_logger(__name__)
 
@@ -24,18 +25,13 @@ class SSEEvent:
         return f"event: {event_type}\ndata: {json.dumps(payload)}\n\n"
 
 
-class SSEManager:
-    def __init__(self, queue_maxsize: int = 100):
-        self._queues: Dict[str, asyncio.Queue] = {}
-        self._queue_maxsize = queue_maxsize
-        self._lock = asyncio.Lock()
+def _channel_name(event_id: str) -> str:
+    """Redis pub/sub channel name for a given event."""
+    return f"sse:{event_id}"
 
-    async def _get_or_create_queue(self, event_id: str) -> asyncio.Queue:
-        async with self._lock:
-            if event_id not in self._queues:
-                self._queues[event_id] = asyncio.Queue(maxsize=self._queue_maxsize)
-                log.debug(f"Created SSE queue for {event_id}")
-            return self._queues[event_id]
+
+class SSEManager:
+    """SSE event manager backed by Redis Pub/Sub."""
 
     async def publish(
         self,
@@ -43,48 +39,54 @@ class SSEManager:
         data: Dict[str, Any],
         event_type: str = "update",
     ) -> None:
-        queue = await self._get_or_create_queue(event_id)
-        
         event = SSEEvent(
             event_id=event_id,
             data=data,
             timestamp=datetime.utcnow().isoformat() + "Z",
         )
-        
-        try:
-            queue.put_nowait(event.to_sse_format(event_type))
-            log.debug(f"Published SSE event for {event_id}: {event_type}")
-        except asyncio.QueueFull:
-            log.warning(f"SSE queue full for {event_id}, dropping oldest event")
-            try:
-                queue.get_nowait()
-            except asyncio.QueueEmpty:
-                log.debug(f"SSE queue unexpectedly empty for {event_id} when trying to drop oldest event")
-            
-            try: 
-                queue.put_nowait(event.to_sse_format(event_type))
-            except asyncio.QueueFull:
-                log.error(f"SSE queue still full for {event_id}, failed to publish event")
+        message = json.dumps({
+            "sse_formatted": event.to_sse_format(event_type),
+            "event_type": event_type,
+        })
+
+        await redis_manager.client.publish(_channel_name(event_id), message)
+        log.debug(f"Published SSE event for {event_id}: {event_type}")
 
     async def subscribe(
         self,
         event_id: str,
         timeout: float = 120.0,
     ) -> AsyncGenerator[str, None]:
-        queue = await self._get_or_create_queue(event_id)
-        
+        pubsub = redis_manager.client.pubsub()
+        channel = _channel_name(event_id)
+
+        await pubsub.subscribe(channel)
+        log.debug(f"Subscribed to Redis channel {channel}")
+
         try:
-            yield f"event: connected\ndata: {{\"event_id\": \"{event_id}\"}}\n\n"
-            
+            yield f"event: connected\ndata: {json.dumps({'event_id': event_id})}\n\n"
+
             while True:
                 try:
-                    event_data = await asyncio.wait_for(queue.get(), timeout=timeout)
-                    yield event_data
-                    
-                    if event_data.startswith("event: completed") or event_data.startswith("event: error"):
-                        yield f"event: close\ndata: {{\"event_id\": \"{event_id}\"}}\n\n"
+                    message = await asyncio.wait_for(
+                        pubsub.get_message(ignore_subscribe_messages=True, timeout=timeout),
+                        timeout=timeout,
+                    )
+
+                    if message is None:
+                        yield ": keepalive\n\n"
+                        continue
+
+                    payload = json.loads(message["data"])
+                    sse_formatted: str = payload["sse_formatted"]
+                    event_type: str = payload["event_type"]
+
+                    yield sse_formatted
+
+                    if event_type in ("completed", "error"):
+                        yield f"event: close\ndata: {json.dumps({'event_id': event_id})}\n\n"
                         break
-                        
+
                 except asyncio.TimeoutError:
                     yield ": keepalive\n\n"
                     continue
@@ -92,16 +94,10 @@ class SSEManager:
                     log.debug(f"SSE subscription cancelled for {event_id}")
                     break
         finally:
-            await self.unsubscribe(event_id)
+            await pubsub.unsubscribe(channel)
+            await pubsub.aclose()
+            log.debug(f"Unsubscribed from Redis channel {channel}")
 
-    async def unsubscribe(self, event_id: str) -> None:
-        async with self._lock:
-            if event_id in self._queues:
-                del self._queues[event_id]
-                log.debug(f"Removed SSE queue for {event_id}")
-
-    def is_subscribed(self, event_id: str) -> bool:
-        return event_id in self._queues
 
 
 sse_manager = SSEManager()

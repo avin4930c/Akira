@@ -1,15 +1,17 @@
 import json
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from app.config.logger_config import setup_logger
 from app.core.sse_manager import SSEManager, get_sse_manager
+from app.core.rabbitmq import RabbitMQManager, get_rabbitmq_manager
+from app.constants.mia import MIA_WORKFLOW_QUEUE
 from app.model.request.service_job import ServiceJobRequest, UpdateAdditionalNotesRequest
 from app.model.response.service_job import ServiceJobResponse, ServiceJobListResponse
 from app.constants.enums.mia_enums import ProcessingStage
-from app.services.mia_service import MiaService, get_mia_service, run_mia_workflow_background
+from app.services.mia_service import MiaService, get_mia_service
 from app.utils.mia_utils import service_job_to_response
 
 mia_router = APIRouter()
@@ -19,17 +21,17 @@ log = setup_logger(__name__)
 @mia_router.post("/service-jobs", response_model=ServiceJobResponse, status_code=status.HTTP_201_CREATED)
 async def create_service_job(
     payload: ServiceJobRequest,
-    background_tasks: BackgroundTasks,
     mia_service: MiaService = Depends(get_mia_service),
+    rmq: RabbitMQManager = Depends(get_rabbitmq_manager),
 ):
     service_job = await mia_service.create_service_job(payload)
-    
-    background_tasks.add_task(
-        run_mia_workflow_background,
-        service_job.id,
+
+    await rmq.publish(
+        queue_name=MIA_WORKFLOW_QUEUE,
+        body={"service_job_id": service_job.id},
     )
-    
-    log.info(f"Started processing for job {service_job.id}")
+
+    log.info(f"Queued MIA workflow for job {service_job.id}")
     return service_job_to_response(service_job)
 
 
@@ -65,9 +67,7 @@ async def stream_job_status(
                 "error": service_job.error_details,
             })
             yield f"event: {event_type}\ndata: {data}\n\n"
-            yield f"event: close\ndata: {{\"event_id\": \"{job_id}\"}}\n\n"
-
-            await sse_manager.unsubscribe(job_id)
+            yield f"event: close\ndata: {json.dumps({'event_id': job_id})}\n\n"
         
         return StreamingResponse(
             immediate_response(),

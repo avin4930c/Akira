@@ -5,8 +5,8 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 from langgraph.graph.state import CompiledStateGraph
-from app.core.database import get_session, async_engine
-from app.core.sse_manager import SSEManager, get_sse_manager, sse_manager as global_sse_manager
+from app.core.database import get_session
+from app.core.sse_manager import SSEManager, get_sse_manager
 from app.workflows.mia_workflow import create_mia_workflow_with_session
 from app.model.request.service_job import ServiceJobRequest
 from app.constants.enums.mia_enums import ServiceJobStatus, ProcessingStage
@@ -257,10 +257,3 @@ def get_mia_service(
     sse_manager: SSEManager = Depends(get_sse_manager),
 ) -> MiaService:
     return MiaService(session=db, sse_manager=sse_manager)
-
-
-async def run_mia_workflow_background(job_id: str) -> None:
-    async with AsyncSession(async_engine) as session:
-        workflow = create_mia_workflow_with_session(session)
-        service = MiaService(session=session, sse_manager=global_sse_manager)
-        await service.run_workflow(job_id, workflow)
