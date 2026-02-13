@@ -1,6 +1,6 @@
 # Akira
 
-**An AI-powered motorcycle diagnostic platform that orchestrates multi-step reasoning pipelines—searching technical manuals, querying the web, generating structured repair plans, and matching parts against real inventory.**
+**An AI-powered motorcycle diagnostic platform that orchestrates multi-step reasoning pipelines-searching technical manuals, querying the web, generating structured repair plans, and matching parts against real inventory.**
 
 ---
 
@@ -8,9 +8,9 @@
 
 Akira is a production system for motorcycle workshops that combines two AI products with workshop management tooling:
 
-**Akira Chat** — A conversational assistant that streams responses token-by-token over WebSocket. Maintains unlimited conversation history through rolling summarization, keeping token usage flat regardless of conversation length.
+**Akira Chat** - A conversational assistant that streams responses token-by-token over WebSocket. Maintains unlimited conversation history through rolling summarization, keeping token usage flat regardless of conversation length.
 
-**MIA (Mechanic Intelligence Assistant)** — An asynchronous diagnostic engine. A mechanic describes symptoms, and the system:
+**MIA (Mechanic Intelligence Assistant)** - An asynchronous diagnostic engine. A mechanic describes symptoms, and the system:
 1. Searches internal technical manuals (RAG over pgvector) and the web (Tavily) in parallel
 2. Generates a structured repair plan with prioritized tasks, difficulty ratings, time estimates, and torque specs
 3. Enriches each part with inventory availability, pricing, and alternatives
@@ -56,7 +56,7 @@ Generating Plan (60%) → Checking Inventory (85%) → Done (100%)
 ## Core Capabilities
 
 **AI & Orchestration**
-- LangGraph StateGraphs for all workflows — explicit, testable, observable pipelines with built-in streaming
+- LangGraph StateGraphs for all workflows - explicit, testable, observable pipelines with built-in streaming
 - Token-by-token chat streaming with automatic conversation titling and incremental summarization
 - LLM-generated search queries optimized for both RAG and web search given service job context
 - Structured plan generation with validated JSON schemas (Pydantic)
@@ -70,7 +70,7 @@ Generating Plan (60%) → Checking Inventory (85%) → Done (100%)
 **RAG & Search**
 - Sentence-boundary chunking with `tiktoken` (512 tokens, 50-token overlap)
 - Batch embedding with exponential backoff (Vertex AI or local LM Studio)
-- Context expansion — retrieves neighboring chunks beyond exact matches
+- Context expansion - retrieves neighboring chunks beyond exact matches
 - Parallel RAG + web search fan-out for comprehensive evidence gathering
 
 **Data & Matching**
@@ -84,7 +84,7 @@ Generating Plan (60%) → Checking Inventory (85%) → Done (100%)
 
 ### Workflow Orchestration
 
-All AI behavior is expressed as **LangGraph StateGraphs** — explicit graphs that define each node, conditional edge, and data flow. The chat graph streams model tokens, auto-generates titles, and performs incremental summarization based on a sliding message window. The MIA graph parallelizes RAG and web search, synchronizes retrieved evidence, generates a validated structured plan, and enriches parts with inventory matches. 
+All AI behavior is expressed as **LangGraph StateGraphs** - explicit graphs that define each node, conditional edge, and data flow. The chat graph streams model tokens, auto-generates titles, and performs incremental summarization based on a sliding message window. The MIA graph parallelizes RAG and web search, synchronizes retrieved evidence, generates a validated structured plan, and enriches parts with inventory matches. 
 
 Graph-first design delivers **predictable orchestration**, built-in streaming, and simple extensibility.
 
@@ -92,23 +92,23 @@ Graph-first design delivers **predictable orchestration**, built-in streaming, a
 
 PDFs are chunked at sentence boundaries using `tiktoken` token counting (512-token chunks, 50-token overlap), embedded in batches of 100 with exponential backoff, and stored as pgvector rows indexed by source, vehicle model, and section. 
 
-At retrieval time, the system **doesn't just return matched chunks** — it fetches neighboring chunks by `chunk_index` from the same source document, expanding context beyond the matched fragment. The LLM generates the search query itself given the service job context, rather than using raw user input.
+At retrieval time, the system **doesn't just return matched chunks** - it fetches neighboring chunks by `chunk_index` from the same source document, expanding context beyond the matched fragment. The LLM generates the search query itself given the service job context, rather than using raw user input.
 
 ### Real-Time Communication
 
-**WebSocket** handles chat because it's bidirectional — the client sends messages and receives streaming responses on the same connection. 
+**WebSocket** handles chat because it's bidirectional - the client sends messages and receives streaming responses on the same connection. 
 
-**SSE** handles MIA progress because it's unidirectional and works cross-process — the worker publishes to Redis, the API server subscribes and streams. The SSE implementation uses `fetch()` + `ReadableStream` instead of `EventSource` because `EventSource` doesn't support auth headers.
+**SSE** handles MIA progress because it's unidirectional and works cross-process - the worker publishes to Redis, the API server subscribes and streams. The SSE implementation uses `fetch()` + `ReadableStream` instead of `EventSource` because `EventSource` doesn't support auth headers.
 
 ### Token Optimization
 
-The chat system loads only the last **15 messages** and injects a rolling summary as a system message. When the conversation grows beyond the summary's coverage window, a new summary is generated **incrementally from the old one** — not from scratch. 
+The chat system loads only the last **15 messages** and injects a rolling summary as a system message. When the conversation grows beyond the summary's coverage window, a new summary is generated **incrementally from the old one** - not from scratch. 
 
 This gives the model context over arbitrarily long conversations while keeping token usage bounded. Thread titles are generated once from the first two messages and never regenerated.
 
 ### Worker Resilience
 
-Failed MIA jobs don't disappear. The worker acks the message, increments an `x-retry-count` header, and republishes — up to **3 retries** with a fresh database session each time. After exhaustion, the message routes to a **dead-letter queue** via a dedicated DLX exchange for post-mortem analysis. 
+Failed MIA jobs don't disappear. The worker acks the message, increments an `x-retry-count` header, and republishes - up to **3 retries** with a fresh database session each time. After exhaustion, the message routes to a **dead-letter queue** via a dedicated DLX exchange for post-mortem analysis. 
 
 The queue uses `prefetch_count=1` for backpressure so a single slow job doesn't starve the worker.
 
