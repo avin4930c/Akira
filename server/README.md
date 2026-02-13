@@ -186,7 +186,7 @@ Auth is enforced across all three protocols:
 ### Prerequisites
 
 - Python 3.12+
-- Poetry 2.x
+- Poetry 1.8+ (including 2.x)
 - PostgreSQL with pgvector
 - Docker
 
@@ -201,7 +201,7 @@ cd server
 poetry install
 
 # Configure environment
-cp .env.example .env  # then fill in values (see below)
+cp .env.example .env  # Then fill in your API keys and credentials
 
 # Start the API server
 poetry run dev

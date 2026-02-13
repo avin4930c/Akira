@@ -133,7 +133,6 @@ akira/
 │   │   ├── constants/      # Domain constants and enums
 │   │   └── utils/          # Auth, chat, RAG, inventory utilities
 │   ├── scripts/            # Dev server, worker, linting, DB seeding
-│   ├── migrations/         # Database migrations
 │   └── creds/              # Service account credentials
 ├── webclient/              # Next.js frontend
 │   └── src/
@@ -157,7 +156,7 @@ akira/
 
 ### Prerequisites
 
-- Python 3.12+, Poetry 2.x
+- Python 3.12+, Poetry 1.8+ (including 2.x)
 - Node.js 18+, npm
 - PostgreSQL with pgvector extension
 - Docker
@@ -173,7 +172,7 @@ docker compose up -d          # RabbitMQ (5672, 15672) + Redis (6379)
 ```bash
 cd server
 poetry install
-cp .env.example .env          # Fill in DATABASE_URL, API keys, Clerk public key
+cp .env.example .env          # Then fill in your API keys and credentials
 poetry run dev                # API server - localhost:8000, hot reload
 poetry run worker             # Worker - separate terminal
 ```

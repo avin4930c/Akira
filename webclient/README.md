@@ -30,7 +30,7 @@ Plus: customer management, vehicle registration, mechanic roster - standard CRUD
 
 ### API - One Axios Instance, Auth on Autopilot
 
-A single Axios client with two interceptors: request adds Clerk Bearer tokens automatically, response handles 401 → refresh → retry with a queued-promise pattern to prevent concurrent refreshes. Wrapped in a typed `api` object that returns `T` directly - consumers never unwrap `.data`.
+A single Axios client with two interceptors: request adds Clerk Bearer tokens automatically, response handles 401 → refresh → retry. Wrapped in a typed `api` object that returns `T` directly - consumers never unwrap `.data`.
 
 Actions are plain async functions (not Next.js Server Actions - no `"use server"` directive), consumed by React Query hooks to separate fetching from caching.
 
