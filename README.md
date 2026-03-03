@@ -19,8 +19,9 @@ The entire MIA pipeline runs asynchronously via **RabbitMQ**, with stage-by-stag
 
 ---
 
-## Mia Workflow
-<video src="https://github.com/user-attachments/assets/49cd17ed-7c2b-4e2f-b1d7-5d917af96b06" autoplay loop muted playsinline controls style="max-width: 100%;"></video>
+## Mia Workflow Demo
+[![Watch the Demo](https://github.com/user-attachments/assets/1f634b11-1487-4ecf-9d28-976064d08fa3)](https://youtube.com/watch?v=248RYyqgjaw)
+🎥 Click the thumbnail above to watch the demo on YouTube.
 
 ## Tech Stack
 
