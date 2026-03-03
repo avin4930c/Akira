@@ -10,7 +10,7 @@ interface OwnerInfoCardProps {
 
 export function OwnerInfoCard({ name, phone, email, userId }: OwnerInfoCardProps) {
     return (
-        <div className="glass-card p-6 rounded-xl">
+        <div className="bg-[#111111] border border-border/10 p-6 rounded-xl">
             <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center">
                     <User className="w-6 h-6 text-primary" />

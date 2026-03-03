@@ -51,7 +51,7 @@ export function AddCustomerDialog({ open, onOpenChange }: AddCustomerDialogProps
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-card border-primary/20">
+            <DialogContent className="bg-[#111111] border border-border/10">
                 <DialogHeader>
                     <DialogTitle className="text-2xl">Add New Customer</DialogTitle>
                 </DialogHeader>

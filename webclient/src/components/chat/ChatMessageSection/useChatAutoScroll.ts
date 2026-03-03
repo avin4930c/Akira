@@ -78,5 +78,5 @@ export const useChatAutoScroll = (
     tryAutoScroll('auto')
   }, [streamingMessage?.content, streamingMessage?.id, tryAutoScroll])
 
-  return { scrollAreaRef }
+  return { scrollAreaRef, scrollToBottom, isNearBottom: isUserNearBottom }
 }

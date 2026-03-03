@@ -19,7 +19,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
 
     return (
         <div
-            className="glass-card p-6 rounded-xl space-y-4 cursor-pointer border border-primary/20 hover:border-primary/40 transition-all"
+            className="bg-[#111111] p-6 rounded-xl space-y-4 cursor-pointer border border-border/10 hover:border-accent/40 transition-all"
             onClick={() => router.push(`/mia/vehicles/${vehicle.id}`)}
         >
             <div className="flex items-start justify-between">

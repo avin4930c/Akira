@@ -99,7 +99,7 @@ export default function ServiceJobDetailPage() {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-5xl mx-auto space-y-6"
+            className="max-w-[1400px] mx-auto space-y-6"
         >
             <DetailHeader
                 title="Service Job Details"
@@ -115,8 +115,9 @@ export default function ServiceJobDetailPage() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
+                        className="w-full mb-6"
                     >
-                        <ProcessingProgress 
+                        <ProcessingProgress
                             state={processingState || {
                                 jobId,
                                 stage: serviceJob.processing_stage || ProcessingStage.Queued,
@@ -126,53 +127,67 @@ export default function ServiceJobDetailPage() {
                                 isProcessing: true,
                                 isComplete: false,
                                 isFailed: false,
-                            }} 
+                            }}
                         />
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SJCustomerCard 
-                    customerId={customer?.id}
-                    vehicleId={vehicle?.id}
-                    name={customer?.name ?? "Unknown"} 
-                    phone={customer?.phone ?? "-"} 
-                    email={customer?.email ?? "-"} 
-                />
-                <SJVehicleCard 
-                    vehicleId={vehicle?.id}
-                    title={`${vehicle?.year ?? ""} ${vehicle?.make ?? ""} ${vehicle?.model ?? ""}`}
-                    registration={vehicle?.registration ?? "-"}
-                    mileage={vehicle?.mileage ?? "-"}
-                />
-            </div>
-
-            {technicalPlan ? (
-                <>
-                    <DiagnosisSection text={technicalPlan.diagnosis_summary} />
-                    <RepairTasksSection tasks={technicalPlan.repair_tasks} />
-                    <SuggestedPartsSection 
-                        parts={technicalPlan.suggested_parts} 
-                        partsAvailability={partsAvailability}
-                    />
-                    <TipsSection tips={technicalPlan.tips} />
-                    <JobSummaryFooter
-                        estimatedTotalMinutes={technicalPlan.estimated_total_minutes}
-                        priorityLevel={technicalPlan.priority_level}
-                        warrantyNotes={technicalPlan.warranty_notes}
-                        followUpRecommendations={technicalPlan.follow_up_recommendations}
-                    />
-                </>
-            ) : (
-                !isJobProcessing && (
-                    <div className="glass-card p-8 rounded-xl text-center">
-                        <p className="text-muted-foreground">
-                            No technical plan available yet. The job may still be processing.
-                        </p>
+            <div className="flex flex-col lg:flex-row gap-6 items-start">
+                
+                <div className="w-full lg:flex-[1.5] space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <SJCustomerCard 
+                            customerId={customer?.id}
+                            vehicleId={vehicle?.id}
+                            name={customer?.name ?? "Unknown"} 
+                            phone={customer?.phone ?? "-"} 
+                            email={customer?.email ?? "-"} 
+                        />
+                        <SJVehicleCard 
+                            vehicleId={vehicle?.id}
+                            title={`${vehicle?.year ?? ""} ${vehicle?.make ?? ""} ${vehicle?.model ?? ""}`}
+                            registration={vehicle?.registration ?? "-"}
+                            mileage={vehicle?.mileage ?? "-"}
+                        />
                     </div>
-                )
-            )}
+
+                    {technicalPlan ? (
+                        <>
+                            <DiagnosisSection text={technicalPlan.diagnosis_summary} />
+                            <RepairTasksSection tasks={technicalPlan.repair_tasks} />
+                        </>
+                    ) : null}
+                </div>
+
+                <div className="w-full lg:flex-1 space-y-6 lg:sticky lg:top-6">
+                    
+
+                    {technicalPlan ? (
+                        <>
+                            <SuggestedPartsSection 
+                                parts={technicalPlan.suggested_parts} 
+                                partsAvailability={partsAvailability}
+                            />
+                            <TipsSection tips={technicalPlan.tips} />
+                            <JobSummaryFooter
+                                estimatedTotalMinutes={technicalPlan.estimated_total_minutes}
+                                priorityLevel={technicalPlan.priority_level}
+                                warrantyNotes={technicalPlan.warranty_notes}
+                                followUpRecommendations={technicalPlan.follow_up_recommendations}
+                            />
+                        </>
+                    ) : (
+                        !isJobProcessing && (
+                            <div className="bg-[#111111] border border-border/10 p-8 rounded-xl text-center">
+                                <p className="text-zinc-300 text-lg">
+                                    No technical plan available yet. The job may still be processing.
+                                </p>
+                            </div>
+                        )
+                    )}
+                </div>
+            </div>
         </motion.div>
     );
 }

@@ -29,7 +29,7 @@ export function CustomersTable({ customers, onViewVehicles, searchQuery = "" }: 
     }
 
     return (
-        <div className="glass-card rounded-xl overflow-hidden">
+        <div className="bg-[#111111] border border-border/10 rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
                 <table className="w-full">
                     <thead className="border-b border-border/50">

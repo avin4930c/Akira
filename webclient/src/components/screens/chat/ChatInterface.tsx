@@ -28,8 +28,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const isTyping = !!streamingMessage || isLoading || isWaitingForResponse;
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex-shrink-0 border-b border-border/20">
+        <div className="flex flex-col h-full bg-[#000000]">
+            <div className="flex-shrink-0">
                 <ChatHeader
                     isConnected={isConnected}
                     error={error}
@@ -45,7 +45,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 />
             </div>
 
-            <div className="flex-shrink-0 border-t border-border/20">
+            <div className="flex-shrink-0">
                 <ChatInput
                     onSendMessage={onSendMessage}
                     isTyping={isTyping}

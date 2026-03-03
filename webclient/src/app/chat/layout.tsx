@@ -6,7 +6,7 @@ export default function ChatLayout({ children }: {
     children: React.ReactNode;
 }) {
     return (
-        <div className="min-h-screen bg-gradient-subtle">
+        <div className="flex h-screen bg-background overflow-hidden relative">
             <Navigation />
             <SidebarProvider>
                 <ChatLayoutClient>

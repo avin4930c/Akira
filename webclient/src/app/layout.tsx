@@ -25,9 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <Providers>
-      <html lang="en">
+      <html lang="en" className="dark" style={{ colorScheme: 'dark' }}>
         <body
-          className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
+          className={`${inter.variable} ${jetbrainsMono.variable} antialiased bg-[#0a0a0a] text-foreground`}
         >
           {children}
         </body>

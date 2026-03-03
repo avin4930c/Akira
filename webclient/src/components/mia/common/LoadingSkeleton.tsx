@@ -25,7 +25,7 @@ export function CardSkeleton({ count = 3 }: { count?: number }) {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: i * 0.1 }}
-          className="glass-card p-6 rounded-xl space-y-4"
+          className="bg-[#111111] border border-border/10 p-6 rounded-xl space-y-4"
         >
           <div className="h-6 w-32 rounded shimmer" />
           <div className="h-4 w-full rounded shimmer" />

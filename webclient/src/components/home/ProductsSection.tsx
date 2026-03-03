@@ -1,14 +1,15 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { features } from '@/constants/homePageConstants'
-import { Button } from '../ui/button';
 import { ArrowRight, CheckCircle } from 'lucide-react';
+import { Button } from '../ui/button';
 import Link from 'next/link';
 
 const ProductsSection = () => {
     return (
-        <section className="py-16 px-6">
+        <section className="relative py-24 px-6 overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
+            
             <div className="container mx-auto">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -17,11 +18,13 @@ const ProductsSection = () => {
                     viewport={{ once: true }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">
-                        Our AI-Powered Solutions
+                    <span className="text-sm font-medium text-accent tracking-wider uppercase">Platform</span>
+                    <h2 className="text-4xl lg:text-5xl font-bold text-foreground mt-3 mb-6">
+                        Two AI Systems. One Goal.
                     </h2>
-                    <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                        Whether you're a weekend rider or a professional mechanic, Akira has the tools you need to excel.
+                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                        Whether you&apos;re a rider looking for quick answers or a mechanic running diagnostics, 
+                        Akira has a purpose-built AI for you.
                     </p>
                 </motion.div>
 
@@ -31,54 +34,54 @@ const ProductsSection = () => {
                             key={feature.title}
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: index * 0.2 }}
+                            transition={{ duration: 0.6, delay: index * 0.15 }}
                             viewport={{ once: true }}
+                            className="group relative"
                         >
-                            <Card className="h-full shadow-card hover:shadow-elegant transition-all duration-300 border-border/50 bg-card/50 backdrop-blur-sm">
-                                <CardHeader className="space-y-4">
-                                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center`}>
-                                        <feature.icon className="w-6 h-6 text-white" />
+                            <div className="relative h-full rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-8 
+                                transition-all duration-500 hover:border-accent/30 hover:shadow-glow">
+                                
+                                <div className={`absolute top-0 left-8 right-8 h-px bg-gradient-to-r ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                                
+                                <div className="space-y-6">
+                                    <div className="flex items-start space-x-4">
+                                        <div className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center shadow-lg`}>
+                                            <feature.icon className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-bold text-foreground">
+                                                {feature.title}
+                                            </h3>
+                                            <p className="text-muted-foreground mt-1">
+                                                {feature.description}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <CardTitle className="text-2xl font-bold text-foreground">
-                                            {feature.title}
-                                        </CardTitle>
-                                        <CardDescription className="text-muted-foreground text-lg">
-                                            {feature.description}
-                                        </CardDescription>
-                                    </div>
-                                </CardHeader>
 
-                                <CardContent className="space-y-6">
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 pl-16">
                                         {feature.features.map((item) => (
                                             <div key={item} className="flex items-center space-x-3">
-                                                <CheckCircle className="w-5 h-5 text-accent flex-shrink-0" />
-                                                <span className="text-foreground">{item}</span>
+                                                <CheckCircle className="w-4 h-4 text-accent flex-shrink-0" />
+                                                <span className="text-sm text-foreground/80">{item}</span>
                                             </div>
                                         ))}
                                     </div>
 
-                                    <Button
-                                        variant="premium"
-                                        size="lg"
-                                        className="w-full"
-                                        asChild={feature.href === '/chat'}
-                                    >
-                                        {feature.href === '/chat' ? (
+                                    <div className="pl-16">
+                                        <Button
+                                            variant="glass"
+                                            size="lg"
+                                            className="group/btn"
+                                            asChild
+                                        >
                                             <Link href={feature.href}>
                                                 {feature.cta}
-                                                <ArrowRight className="w-4 h-4 ml-2" />
+                                                <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover/btn:translate-x-1" />
                                             </Link>
-                                        ) : (
-                                            <>
-                                                {feature.cta}
-                                                <ArrowRight className="w-4 h-4 ml-2" />
-                                            </>
-                                        )}
-                                    </Button>
-                                </CardContent>
-                            </Card>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
                         </motion.div>
                     ))}
                 </div>
