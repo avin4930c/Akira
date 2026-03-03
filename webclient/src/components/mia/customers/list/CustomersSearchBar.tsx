@@ -14,7 +14,7 @@ export function CustomersSearchBar({ value, onChange }: CustomersSearchBarProps)
                 placeholder="Search customers by Id, Name or Email"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="pl-10 glass-card"
+                className="pl-10 bg-[#111111] border border-border/10 rounded-md focus-visible:ring-1 focus-visible:ring-accent"
             />
         </div>
     );

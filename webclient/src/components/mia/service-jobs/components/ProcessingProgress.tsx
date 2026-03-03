@@ -39,63 +39,72 @@ export function ProcessingProgress({ state, className, compact = false }: Proces
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "rounded-xl border p-6 space-y-4",
-        isComplete && "border-green-500/30 bg-green-500/5",
-        isFailed && "border-red-500/30 bg-red-500/5",
-        !isComplete && !isFailed && "border-primary/30 bg-primary/5",
+        "bg-[#111111] rounded-xl border border-border/10 p-6 space-y-5 relative overflow-hidden",
+        isComplete && "border-[#27C93F]/20",
+        isFailed && "border-[#FF5F56]/20",
         className
       )}
     >
-      <div className="flex items-center gap-3">
+      {!isComplete && !isFailed && (
+          <div className="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
+              <div className="w-32 h-32 bg-accent/20 rounded-full blur-[40px] transform translate-x-10 -translate-y-10" />
+          </div>
+      )}
+
+      <div className="relative z-10 flex items-center gap-4">
         <div
           className={cn(
-            "p-2 rounded-lg",
-            isComplete && "bg-green-500/10",
-            isFailed && "bg-red-500/10",
-            !isComplete && !isFailed && "bg-primary/10"
+            "p-3 rounded-xl border flex items-center justify-center",
+            isComplete ? "bg-[#27C93F]/10 border-[#27C93F]/20" :
+            isFailed ? "bg-[#FF5F56]/10 border-[#FF5F56]/20" :
+            "bg-[#161616] border-border/20 shadow-sm"
           )}
         >
           <StageIcon
             className={cn(
               "h-5 w-5",
-              isComplete && "text-green-500",
-              isFailed && "text-red-500",
-              stageConfig.animationClass
+              isComplete && "text-[#27C93F]",
+              isFailed && "text-[#FF5F56]",
+              !isComplete && !isFailed && "text-accent",
+              !isComplete && !isFailed && stageConfig.animationClass
             )}
           />
         </div>
         <div className="flex-1">
-          <h3 className="font-medium">
+          <h3 className="text-base font-semibold text-zinc-100 tracking-tight">
             {isComplete
-              ? "Processing Complete"
+              ? "Synthesis Complete"
               : isFailed
-              ? "Processing Failed"
-              : "MIA is Analyzing..."}
+              ? "Execution Failed"
+              : "MIA is analyzing your request..."}
           </h3>
-          <p className="text-sm text-muted-foreground">{stageLabel}</p>
+          <p className="text-[13px] text-zinc-400 font-mono mt-0.5 tracking-wide">&gt; {stageLabel}</p>
         </div>
-        <span
-          className={cn(
-            "text-lg font-bold",
-            isComplete && "text-green-500",
-            isFailed && "text-red-500",
-            !isComplete && !isFailed && "text-primary"
-          )}
-        >
-          {progress}%
-        </span>
+        <div className="flex flex-col items-end">
+            <span
+              className={cn(
+                "text-2xl font-bold font-mono tracking-tighter",
+                isComplete && "text-[#27C93F]",
+                isFailed && "text-[#FF5F56]",
+                !isComplete && !isFailed && "text-accent"
+              )}
+            >
+              {progress}%
+            </span>
+        </div>
       </div>
 
       <Progress
         value={progress}
         className={cn(
-          "h-3",
-          isComplete && "[&>div]:bg-green-500",
-          isFailed && "[&>div]:bg-red-500"
+          "h-2 bg-[#1a1a1a] border border-border/5",
+          isComplete && "[&>div]:bg-[#27C93F]",
+          isFailed && "[&>div]:bg-[#FF5F56]",
+          !isComplete && !isFailed && "[&>div]:bg-accent"
         )}
       />
 
-      <div className="grid grid-cols-6 gap-1">
+      <div className="grid grid-cols-6 gap-2">
         {Object.entries(processingStageConfig)
           .filter(([key]) => key !== ProcessingStage.Failed)
           .map(([stageKey, config]) => {
@@ -107,18 +116,22 @@ export function ProcessingProgress({ state, className, compact = false }: Proces
               <div
                 key={stageKey}
                 className={cn(
-                  "text-center transition-colors",
-                  isCurrentOrPast ? "text-primary" : "text-muted-foreground/50"
+                  "text-center transition-all duration-500",
+                  isCurrentOrPast ? "opacity-100" : "opacity-40"
                 )}
               >
                 <div
                   className={cn(
-                    "h-1.5 rounded-full mb-1 transition-colors",
-                    isCurrentOrPast ? "bg-primary" : "bg-muted",
+                    "h-1 rounded-full mb-2 transition-all duration-500",
+                    isCurrentOrPast ? "bg-accent shadow-[0_0_8px_hsl(24_100%_58%/0.5)]" : "bg-border/20",
+                    isComplete && isCurrentOrPast && "bg-[#27C93F] shadow-[0_0_8px_rgba(39,201,63,0.5)]",
                     isCurrent && "animate-pulse"
                   )}
                 />
-                <span className="text-[10px] leading-tight block">
+                <span className={cn(
+                    "text-[9px] uppercase tracking-wider font-semibold block",
+                    isCurrentOrPast ? "text-zinc-300" : "text-muted-foreground"
+                )}>
                   {config.label}
                 </span>
               </div>

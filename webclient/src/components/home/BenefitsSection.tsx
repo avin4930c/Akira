@@ -1,79 +1,61 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { benefits } from '@/constants/homePageConstants'
-import { CheckCircle, Zap } from 'lucide-react'
-import { Button } from '../ui/button'
-import Link from 'next/link'
+import { steps } from '@/constants/homePageConstants'
 
 const BenefitsSection = () => {
   return (
-    <section className="py-16 px-6 bg-muted/30">
-        <div className="container mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              className="space-y-8"
-            >
-              <div>
-                <h2 className="text-4xl font-bold text-foreground mb-6">
-                  Why Choose Akira?
-                </h2>
-                <p className="text-lg text-muted-foreground">
-                  Join thousands of riders and mechanics who trust Akira for reliable, expert-level motorcycle guidance.
-                </p>
-              </div>
+    <section className="relative py-24 px-6">
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      
+      <div className="container mx-auto max-w-5xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <span className="text-sm font-medium text-accent tracking-wider uppercase">How It Works</span>
+          <h2 className="text-4xl lg:text-5xl font-bold text-foreground mt-3 mb-6">
+            Three Steps to Expert Guidance
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Whether it&apos;s a quick question or a full diagnostic workflow, Akira delivers results in seconds.
+          </p>
+        </motion.div>
 
-              <div className="space-y-4">
-                {benefits.map((benefit, index) => (
-                  <motion.div
-                    key={benefit}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    className="flex items-start space-x-3"
-                  >
-                    <CheckCircle className="w-6 h-6 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-foreground">{benefit}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+        <div className="relative">
+          <div className="absolute left-[28px] top-8 bottom-8 w-px bg-gradient-to-b from-accent/40 via-accent/20 to-transparent hidden md:block" />
 
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
-              <div className="glass rounded-2xl p-8 border border-border/50">
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-accent rounded-2xl flex items-center justify-center mx-auto mb-4 animate-glow-pulse">
-                      <Zap className="w-8 h-8 text-accent-foreground" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-foreground">Ready to Get Started?</h3>
-                    <p className="text-muted-foreground">Join the future of motorcycle assistance today.</p>
+          <div className="space-y-12">
+            {steps.map((step, index) => (
+              <motion.div
+                key={step.number}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.15 }}
+                viewport={{ once: true }}
+                className="flex items-start gap-6"
+              >
+                <div className="relative flex-shrink-0">
+                  <div className="w-14 h-14 rounded-2xl border border-accent/20 bg-accent/5 backdrop-blur-sm flex items-center justify-center">
+                    <step.icon className="w-6 h-6 text-accent" />
                   </div>
-                  
-                  <div className="flex flex-col space-y-3">
-                    <Button variant="hero" size="lg" asChild>
-                      <Link href="/chat">Start Chatting with Akira</Link>
-                    </Button>
-                    <Button variant="outline" size="lg">
-                      Schedule a Demo
-                    </Button>
-                  </div>
+                  <span className="absolute -top-2 -right-2 text-[10px] font-mono font-bold text-accent bg-background border border-accent/20 rounded-full w-6 h-6 flex items-center justify-center">
+                    {step.number}
+                  </span>
                 </div>
-              </div>
-            </motion.div>
+
+                <div className="flex-1 pt-2">
+                  <h3 className="text-xl font-semibold text-foreground mb-2">{step.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{step.description}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </section>
+      </div>
+    </section>
   )
 }
 

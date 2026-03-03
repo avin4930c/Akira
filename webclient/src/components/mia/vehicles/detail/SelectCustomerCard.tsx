@@ -29,7 +29,7 @@ export function SelectCustomerCard({ value, onChange, selectedCustomer }: Select
     }, [suggestions, selectedCustomer, value]);
 
     return (
-        <div className="glass-card p-6 rounded-xl">
+        <div className="bg-[#111111] border border-border/10 p-6 rounded-xl">
             <Label className="text-base font-semibold mb-3 block">Select Customer</Label>
             <SearchableSelect
                 options={options}

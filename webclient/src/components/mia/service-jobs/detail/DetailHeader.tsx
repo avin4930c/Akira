@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { RefreshCw, CheckCircle2 } from "lucide-react";
+import { RefreshCw, CheckCircle2, LayoutTemplate, Download } from "lucide-react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -14,6 +13,7 @@ import {
 import { useState } from "react";
 import { ServiceJobStatus } from "@/types/mia";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface DetailHeaderProps {
     title: string;
@@ -29,14 +29,18 @@ export function DetailHeader({ title, jobId, status, onRevalidate, onValidate }:
 
     const statusClass =
         status === ServiceJobStatus.Validated
-            ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+            ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
             : status === ServiceJobStatus.Completed
-                ? "bg-green-500/10 text-green-500 border-green-500/20"
-                : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+                ? "bg-[#27C93F]/10 text-[#27C93F] border-[#27C93F]/20"
+                : "bg-[#FFBD2E]/10 text-[#FFBD2E] border-[#FFBD2E]/20";
 
     const handleRevalidateClick = () => {
         onRevalidate();
         toast.warning("This feature is not implemented yet. Please check back later.");
+    };
+
+    const handleExportPdf = () => {
+        toast.info("PDF Export will be implemented soon");
     };
 
     const handleValidateConfirm = () => {
@@ -46,39 +50,60 @@ export function DetailHeader({ title, jobId, status, onRevalidate, onValidate }:
 
     return (
         <>
-            <div className="flex items-start justify-between">
-                <div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-3xl font-bold">{title}</h1>
-                        <Badge variant="outline" className={statusClass}>{status}</Badge>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 mb-2 border-b border-border/10">
+                <div className="flex items-center gap-4">
+                    <div className="hidden sm:flex w-12 h-12 rounded-xl bg-[#111] border border-border/20 items-center justify-center">
+                        <LayoutTemplate className="w-5 h-5 text-accent" />
                     </div>
-                    <p className="text-muted-foreground mt-1">Job ID: {jobId}</p>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground/90">{title}</h1>
+                            <span className={cn("text-[11px] px-2 py-0.5 rounded font-medium border uppercase tracking-wider", statusClass)}>
+                                {status.replace('_', ' ')}
+                            </span>
+                        </div>
+                        <p className="text-[13px] text-muted-foreground font-mono mt-1 flex items-center gap-2">
+                            <span>JOB ID:</span> 
+                            <span className="text-foreground/70">{jobId}</span>
+                        </p>
+                    </div>
                 </div>
-                <div className="flex gap-3">
-                    <Button variant="outline" className="border-primary/30 hover:bg-primary/10" onClick={handleRevalidateClick}>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Re-Validate
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" className="bg-[#111] border-border/10 hover:border-border/30 hover:bg-[#161616]" onClick={handleExportPdf}>
+                        <Download className="w-3.5 h-3.5 mr-2" />
+                        Export PDF
                     </Button>
-                    <Button className="bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90" onClick={() => setShowValidateConfirm(true)} disabled={isValidated}>
-                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                        {isValidated ? "Already validated" : "Mark as Validated"}
+                    <Button variant="outline" size="sm" className="bg-[#111] border-border/10 hover:border-border/30 hover:bg-[#161616]" onClick={handleRevalidateClick}>
+                        <RefreshCw className="w-3.5 h-3.5 mr-2" />
+                        Re-run Pipeline
                     </Button>
+                    {(status === ServiceJobStatus.Completed || status === ServiceJobStatus.Validated) && (
+                        <Button 
+                            size="sm"
+                            className="bg-accent/10 border border-accent/20 text-accent hover:bg-accent/20 hover:text-accent font-medium shadow-none" 
+                            onClick={() => setShowValidateConfirm(true)} 
+                            disabled={isValidated}
+                        >
+                            <CheckCircle2 className="w-3.5 h-3.5 mr-2" />
+                            {isValidated ? "Validated" : "Commit Execution"}
+                        </Button>
+                    )}
                 </div>
             </div>
 
             <AlertDialog open={showValidateConfirm} onOpenChange={setShowValidateConfirm}>
-                <AlertDialogContent className="bg-background border-border">
+                <AlertDialogContent className="bg-[#111] border-border/20 sm:max-w-[425px]">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-foreground">Validate Service Job</AlertDialogTitle>
+                        <AlertDialogTitle className="text-foreground">Commit Execution Plan</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
-                            Are you sure you want to validate this service job? This will mark the job as validated and process it through the system.
+                            This will freeze the current repair pipeline state. Submitting marks this job as validated and pushes events down the queue.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-secondary text-secondary-foreground hover:bg-secondary/80">Cancel</AlertDialogCancel>
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel className="bg-[#161616] border-border/10 text-muted-foreground hover:bg-[#1a1a1a] hover:text-foreground">Cancel</AlertDialogCancel>
                         <AlertDialogAction 
                             onClick={handleValidateConfirm}
-                            className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:opacity-90"
+                            className="bg-accent text-white hover:bg-accent/90 focus:ring-accent"
                         >
                             Validate
                         </AlertDialogAction>

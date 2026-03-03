@@ -36,7 +36,7 @@ export function TextareaField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`glass-card ${minHeight} resize-none`}
+        className={`bg-[#111111] border border-border/10 rounded-md focus-visible:ring-1 focus-visible:ring-accent ${minHeight} resize-none`}
         minLength={minLength}
         maxLength={maxLength}
         disabled={disabled}

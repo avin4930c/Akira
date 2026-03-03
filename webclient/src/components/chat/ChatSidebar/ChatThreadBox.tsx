@@ -1,7 +1,7 @@
 "use client"
 
 import { ChatThread } from '@/types/chat';
-import { Clock, MessageCircle } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import React from 'react';
@@ -15,23 +15,29 @@ const ChatThreadBox: React.FC<ChatThreadBoxProps> = ({ thread }) => {
     const currentChatId = params.chatId as string;
     const isActive = currentChatId === thread.id;
 
+    const timeAgo = thread.updatedAt 
+        ? new Date(thread.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : '';
+
     return (
         <Link href={`/chat/${thread.id}`}>
             <div
-                className={`p-3 rounded-lg cursor-pointer transition-colors duration-200 border ${isActive
-                        ? 'bg-accent/20 border-accent/30 text-accent-foreground'
-                        : 'bg-muted/30 hover:bg-muted/50 border-transparent hover:border-border/30'
-                    }`}
+                className={`group px-3 py-3 rounded-xl cursor-pointer transition-all duration-300 border ${
+                    isActive
+                        ? 'bg-[#111111] border-accent/20 text-zinc-100 shadow-[0_0_15px_hsl(24_100%_58%/0.05)]'
+                        : 'bg-transparent border-transparent text-zinc-500 hover:bg-[#111111] hover:border-border/10 hover:text-zinc-300'
+                }`}
             >
-                <div className="flex items-center space-x-2 mb-1">
-                    <MessageCircle className={`w-4 h-4 ${isActive ? 'text-accent' : 'text-muted-foreground'}`} />
-                    <span className="text-sm font-medium truncate">
+                <div className="flex items-center gap-3">
+                    <MessageCircle className={`w-[14px] h-[14px] flex-shrink-0 transition-colors ${isActive ? 'text-accent' : 'group-hover:text-accent/70'}`} />
+                    <span className="text-[13px] font-medium truncate flex-1 tracking-wide">
                         {thread.title}
                     </span>
-                </div>
-                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    <span>{thread.updatedAt ? new Date(thread.updatedAt).toLocaleString('en-US') : "Last updated unknown"}</span>
+                    {timeAgo && (
+                        <span className="text-[10px] font-mono text-zinc-600 flex-shrink-0">
+                            {timeAgo}
+                        </span>
+                    )}
                 </div>
             </div>
         </Link>

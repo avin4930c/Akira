@@ -1,19 +1,22 @@
 import { Lightbulb } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import type { MechanicTip } from "@/types/mia";
 import { tipCategoryConfig } from "@/constants/mia/icons";
+import { cn } from "@/lib/utils";
 
 export function TipsSection({ tips }: { tips: MechanicTip[] }) {
     return (
-        <div className="glass-card p-6 rounded-xl">
+        <div className="w-full">
             <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center">
-                    <Lightbulb className="w-5 h-5 text-yellow-400" />
+                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-[#161616] border border-border/20 shadow-sm relative overflow-hidden">
+                    <Lightbulb className="w-4 h-4 text-accent" />
                 </div>
-                <h3 className="text-xl font-bold">Pro Tips</h3>
+                <div>
+                    <h3 className="text-lg font-semibold tracking-tight text-foreground/90">Mechanic Insights</h3>
+                    <p className="text-[13px] text-muted-foreground">Pro-tips for better execution</p>
+                </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {tips.map((tip, idx) => {
                     const config = tipCategoryConfig[tip.category];
                     const Icon = config.icon;
@@ -21,19 +24,19 @@ export function TipsSection({ tips }: { tips: MechanicTip[] }) {
                     return (
                         <div
                             key={idx}
-                            className={`p-4 rounded-lg ${config.bgColor} border ${config.borderColor}`}
+                            className="flex flex-col bg-[#111111] border border-border/10 rounded-xl p-5 hover:border-border/30 transition-colors relative overflow-hidden"
                         >
-                            <div className="flex items-start gap-3">
-                                <Icon className={`w-5 h-5 ${config.color} flex-shrink-0 mt-0.5`} />
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Badge variant="outline" className={config.badgeColor}>
-                                            {tip.category}
-                                        </Badge>
-                                    </div>
-                                    <p className="text-sm leading-relaxed">{tip.tip}</p>
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Icon className={cn("w-4 h-4", config.color)} />
+                                    <span className="text-[12px] font-medium text-foreground/80 tracking-wide uppercase">
+                                        {tip.category.replace('_', ' ')}
+                                    </span>
                                 </div>
                             </div>
+                            <p className="text-[13px] text-muted-foreground leading-relaxed">
+                                {tip.tip}
+                            </p>
                         </div>
                     );
                 })}

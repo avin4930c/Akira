@@ -4,6 +4,7 @@ import { StreamingMessage } from '@/types/chat'
 export const useChatAutoScroll = (
   messagesLength: number,
   streamingMessage?: StreamingMessage | null,
+  onScrollChange?: (isNearBottom: boolean) => void
 ) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement | null>(null)
@@ -56,7 +57,11 @@ export const useChatAutoScroll = (
     if (!viewport) return
 
     const handleScroll = () => {
-      autoScrollRef.current = isUserNearBottom()
+      const nearBottom = isUserNearBottom()
+      autoScrollRef.current = nearBottom
+      if (onScrollChange) {
+        onScrollChange(nearBottom)
+      }
     }
 
     handleScroll()
@@ -78,5 +83,5 @@ export const useChatAutoScroll = (
     tryAutoScroll('auto')
   }, [streamingMessage?.content, streamingMessage?.id, tryAutoScroll])
 
-  return { scrollAreaRef }
+  return { scrollAreaRef, scrollToBottom, isNearBottom: isUserNearBottom }
 }

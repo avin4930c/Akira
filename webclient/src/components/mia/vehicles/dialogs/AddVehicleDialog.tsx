@@ -65,7 +65,7 @@ export function AddVehicleDialog({ open, onOpenChange, selectedCustomerName, sel
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-card border-primary/20 max-w-2xl">
+            <DialogContent className="bg-[#111111] border border-border/10 max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="text-2xl">Add New Vehicle</DialogTitle>
                 </DialogHeader>
