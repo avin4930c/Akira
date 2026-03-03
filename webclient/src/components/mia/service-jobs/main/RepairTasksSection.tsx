@@ -2,10 +2,9 @@ import { Wrench, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { RepairTask } from "@/types/mia";
 
 const difficultyColors: Record<string, string> = {
-    "Easy": "bg-[#27C93F]/10 text-[#27C93F] border-[#27C93F]/20",
-    "Moderate": "bg-[#FFBD2E]/10 text-[#FFBD2E] border-[#FFBD2E]/20",
-    "Hard": "bg-[#FF5F56]/10 text-[#FF5F56] border-[#FF5F56]/20",
-    "Expert": "bg-purple-500/10 text-purple-400 border-purple-500/20",
+    "easy": "bg-[#27C93F]/10 text-[#27C93F] border-[#27C93F]/20",
+    "moderate": "bg-[#FFBD2E]/10 text-[#FFBD2E] border-[#FFBD2E]/20",
+    "advanced": "bg-[#FF5F56]/10 text-[#FF5F56] border-[#FF5F56]/20",
 };
 
 export function RepairTasksSection({ tasks }: { tasks: RepairTask[] }) {

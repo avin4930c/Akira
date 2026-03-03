@@ -20,17 +20,17 @@ const ChatMessageSection: React.FC<ChatMessageSectionProps> = ({
   streamingMessage,
   isWaitingForResponse = false,
 }) => {
-  const { scrollAreaRef, scrollToBottom, isNearBottom } = useChatAutoScroll(messages.length, streamingMessage)
   const [showFab, setShowFab] = useState(false)
 
-  const checkScroll = useCallback(() => {
-    setShowFab(!isNearBottom())
-  }, [isNearBottom])
+  const handleScrollChange = useCallback((isNearBottom: boolean) => {
+    setShowFab(!isNearBottom)
+  }, [])
 
-  useEffect(() => {
-    const interval = setInterval(checkScroll, 500)
-    return () => clearInterval(interval)
-  }, [checkScroll])
+  const { scrollAreaRef, scrollToBottom } = useChatAutoScroll(
+    messages.length, 
+    streamingMessage,
+    handleScrollChange
+  )
 
   return (
     <div className="relative h-full bg-[#0a0a0a]">

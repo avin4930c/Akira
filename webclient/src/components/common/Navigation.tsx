@@ -33,7 +33,7 @@ const Navigation = () => {
     { name: 'MIA', href: '/mia', icon: Wrench },
   ];
 
-  const isActive = (href: string) => pathname === href;
+  const isActive = (href: string) => pathname === href || (href !== '/' && pathname?.startsWith(href));
 
   return (
     <nav className={cn(
